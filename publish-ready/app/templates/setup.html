@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Acceso | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <article class="auth-card">
+      <p class="eyebrow">Primer acceso</p>
+      <h1>{{ auth_title }}</h1>
+      <p class="section-copy">{{ auth_intro }}</p>
+
+      {% if error %}
+        <p class="form-alert error">{{ error }}</p>
+      {% endif %}
+
+      <form method="post" action="/setup" class="app-form auth-form">
+        <label>
+          <span>Usuario</span>
+          <input type="text" name="username" value="{{ username or '' }}" autocomplete="username" required>
+        </label>
+
+        <label>
+          <span>Contrasena</span>
+          <input type="password" name="password" autocomplete="new-password" required>
+        </label>
+
+        <label>
+          <span>Confirmar contrasena</span>
+          <input type="password" name="confirm_password" autocomplete="new-password" required>
+        </label>
+
+        <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
+      </form>
+    </article>
+  </section>
+{% endblock %}

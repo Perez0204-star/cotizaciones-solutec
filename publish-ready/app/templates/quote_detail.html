@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quote.quote_number }} | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Cotizacion guardada</p>
+      <h1>{{ quote.quote_number }}</h1>
+      <p class="section-copy">{{ quote.title }}</p>
+    </div>
+    <div class="hero-actions">
+      <a class="button primary" href="/quotes/{{ quote.id }}/export">Descargar Excel</a>
+      <a class="button secondary" href="/quotes/{{ quote.id }}/edit">Editar cotizacion</a>
+      <a class="button secondary" href="/quotes/new">Nueva cotizacion</a>
+      <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('¿Eliminar esta cotización? Esta acción no se puede deshacer.');">
+        <input type="hidden" name="next" value="/">
+        <button class="button danger" type="submit">Eliminar cotizacion</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="panel-grid">
+    <article class="panel">
+      <div class="detail-grid">
+        <div>
+          <span class="detail-label">Cliente</span>
+          <strong>{{ quote.client_name }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Correo</span>
+          <strong>{{ quote.client_email or "Sin correo" }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Ubicacion</span>
+          <strong>{{ quote.location }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Solicitado por</span>
+          <strong>{{ quote.requested_by }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Fecha</span>
+          <strong>{{ quote.quote_date }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Moneda</span>
+          <strong>{{ quote.currency_code }}</strong>
+        </div>
+        <div>
+          <span class="detail-label">Margen global</span>
+          <strong>{{ quote.price_margin_pct|percent }}%</strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <p class="eyebrow">Resumen financiero</p>
+      <div class="total-row">
+        <span>Total costos directos</span>
+        <strong>{{ quote.subtotal|money(settings.rounding_mode) }}</strong>
+      </div>
+      <div class="total-row">
+        <span>IVA</span>
+        <strong>{{ quote.tax_amount|money(settings.rounding_mode) }}</strong>
+      </div>
+      <div class="total-row grand">
+        <span>Total</span>
+        <strong>{{ quote.total|money(settings.rounding_mode) }}</strong>
+      </div>
+      {% if quote.notes %}
+        <div class="quote-notes">
+          <span class="detail-label">Notas</span>
+          <p>{{ quote.notes }}</p>
+        </div>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col>
+          <col>
+          <col>
+          <col class="numeric-col">
+          <col class="numeric-col">
+          <col class="numeric-col">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Descripcion</th>
+            <th>Unidad</th>
+            <th class="align-right">Cantidad</th>
+            <th class="align-right">Vr Material</th>
+            <th class="align-right">Vr Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in quote["items"] %}
+            <tr>
+              <td>{{ item.sku }}</td>
+              <td>{{ item.description }}</td>
+              <td>{{ item.unit }}</td>
+              <td class="align-right">{{ item.qty }}</td>
+              <td class="align-right">{{ item.price_unit|money(settings.rounding_mode) }}</td>
+              <td class="align-right">{{ item.line_total|money(settings.rounding_mode) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

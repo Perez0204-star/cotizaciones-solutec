@@ -1,0 +1,1 @@
+"""Quotation app package."""

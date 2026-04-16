@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Ingresar | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <article class="auth-card">
+      <p class="eyebrow">Acceso seguro</p>
+      <h1>{{ auth_title }}</h1>
+      <p class="section-copy">{{ auth_intro }}</p>
+
+      {% if error %}
+        <p class="form-alert error">{{ error }}</p>
+      {% endif %}
+
+      <form method="post" action="/login" class="app-form auth-form">
+        <input type="hidden" name="next" value="{{ next_path }}">
+
+        <label>
+          <span>Usuario</span>
+          <input type="text" name="username" value="{{ username or '' }}" autocomplete="username" required>
+        </label>
+
+        <label>
+          <span>Contrasena</span>
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+
+        <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
+      </form>
+    </article>
+  </section>
+{% endblock %}
