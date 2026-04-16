@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="hero-card">
+    <div>
+      <p class="eyebrow">MVP operativo</p>
+      <h1>Catalogo, calculo y exportacion a Excel desde una sola base.</h1>
+      <p class="hero-copy">
+        Administra productos y servicios, arma cotizaciones con IVA y descarga un archivo .xlsx con una
+        estructura lista para entregar.
+      </p>
+    </div>
+    <div class="hero-actions">
+      <a class="button primary" href="/quotes/new">Crear cotizacion</a>
+      <a class="button secondary" href="/catalog/new">Nuevo producto o servicio</a>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Catalogo</span>
+      <strong>{{ stats.catalog }}</strong>
+      <p>Items activos e inactivos registrados.</p>
+    </article>
+    <article class="stat-card">
+      <span>Clientes</span>
+      <strong>{{ stats.clients }}</strong>
+      <p>Contactos disponibles para cotizar.</p>
+    </article>
+    <article class="stat-card">
+      <span>Cotizaciones</span>
+      <strong>{{ stats.quotes }}</strong>
+      <p>Documentos guardados en la base local.</p>
+    </article>
+  </section>
+
+  <section class="panel-grid">
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Ultimas cotizaciones</h2>
+        <a href="/quotes/new">Nueva</a>
+      </div>
+      {% if recent_quotes %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Numero</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for quote in recent_quotes %}
+                <tr>
+                  <td><a href="/quotes/{{ quote.id }}">{{ quote.quote_number }}</a></td>
+                  <td>{{ quote.client_name }}</td>
+                  <td>{{ quote.quote_date }}</td>
+                  <td>{{ quote.total|money(settings.rounding_mode) }}</td>
+                  <td>
+                    <div class="row-actions">
+                      <a class="button secondary compact-button" href="/quotes/{{ quote.id }}">Abrir</a>
+                      <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('¿Eliminar esta cotización? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="next" value="/">
+                        <button class="button danger compact-button" type="submit">Eliminar</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">Todavia no hay cotizaciones creadas.</p>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Catalogo reciente</h2>
+        <a href="/catalog">Ver todo</a>
+      </div>
+      {% if catalog_items %}
+        <div class="stack-list">
+          {% for item in catalog_items %}
+            <div class="stack-row">
+              <div>
+                <strong>{{ item.sku }}</strong>
+                <p>{{ item.description }}</p>
+              </div>
+              <div class="row-meta">
+                <span>{{ item.item_type }}</span>
+                <strong>{{ item.suggested_price|money(settings.rounding_mode) }}</strong>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-state">Empieza creando productos o servicios para poblar el catalogo.</p>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Clientes</h2>
+        <a href="/clients/new">Agregar</a>
+      </div>
+      {% if clients %}
+        <div class="stack-list">
+          {% for client in clients %}
+            <div class="stack-row">
+              <div>
+                <strong>{{ client.name }}</strong>
+                <p>{{ client.email or "Sin correo" }}</p>
+              </div>
+              <div class="row-meta">
+                <span>{{ client.phone or "Sin telefono" }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-state">No hay clientes guardados todavia.</p>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}

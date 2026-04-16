@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Editar" if item_id else "Nuevo" }} item | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Ficha de catálogo</p>
+      <h1>{{ "Editar item" if item_id else "Nuevo producto o servicio" }}</h1>
+      <p class="section-copy">Configura costo, método de cálculo y notas para reutilizarlo en las cotizaciones.</p>
+    </div>
+    <a class="button secondary" href="/catalog">Volver</a>
+  </section>
+
+  <section class="form-panel">
+    {% if error %}
+      <p class="form-alert error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post" action="/catalog/save" class="app-form" data-page-form="catalog" data-rounding-mode="{{ settings.rounding_mode }}">
+      {% if item_id %}
+        <input type="hidden" name="id" value="{{ item_id }}">
+      {% endif %}
+
+      <div class="form-grid">
+        <label>
+          <span>Tipo</span>
+          <select name="item_type">
+            <option value="PRODUCT" {% if form_data.item_type == "PRODUCT" %}selected{% endif %}>Producto</option>
+            <option value="SERVICE" {% if form_data.item_type == "SERVICE" %}selected{% endif %}>Servicio</option>
+          </select>
+        </label>
+
+        <label>
+          <span>SKU</span>
+          <input type="text" name="sku" value="{{ form_data.sku or '' }}" required>
+        </label>
+
+        <label class="span-2">
+          <span>Descripción</span>
+          <input type="text" name="description" value="{{ form_data.description or '' }}" required>
+        </label>
+
+        <label>
+          <span>Unidad</span>
+          <input type="text" name="unit" value="{{ form_data.unit or '' }}" placeholder="Unidad, Metro, Hora" required>
+        </label>
+
+        <label>
+          <span>Costo base</span>
+          <input id="catalog-cost" type="number" name="cost_amount" step="0.01" min="0" value="{{ form_data.cost_amount or 0 }}">
+        </label>
+
+        <label>
+          <span>Impuesto default</span>
+          <input type="number" name="tax_rate" step="0.01" min="0" value="{{ form_data.tax_rate or settings.iva_rate }}">
+        </label>
+
+        <label>
+          <span>Método de precio</span>
+          <select id="catalog-pricing-mode" name="pricing_mode">
+            <option value="MARGIN" {% if form_data.pricing_mode == "MARGIN" %}selected{% endif %}>Margen bruto</option>
+            <option value="MARKUP" {% if form_data.pricing_mode == "MARKUP" %}selected{% endif %}>Markup</option>
+            <option value="MANUAL" {% if form_data.pricing_mode == "MANUAL" %}selected{% endif %}>Precio manual</option>
+          </select>
+        </label>
+
+        <label>
+          <span>% Margen</span>
+          <input id="catalog-margin" type="number" name="margin_pct" step="0.01" min="0" value="{{ form_data.margin_pct or 0 }}">
+        </label>
+
+        <label>
+          <span>% Markup</span>
+          <input id="catalog-markup" type="number" name="markup_pct" step="0.01" min="0" value="{{ form_data.markup_pct or 0 }}">
+        </label>
+
+        <label>
+          <span>Precio manual</span>
+          <input id="catalog-manual-price" type="number" name="manual_price" step="0.01" min="0" value="{{ form_data.manual_price or 0 }}">
+        </label>
+
+        <label>
+          <span>Estado</span>
+          <label class="toggle">
+            <input type="checkbox" name="active" {% if form_data.active in (1, '1', True, 'on', None) %}checked{% endif %}>
+            <span>Activo para cotizar</span>
+          </label>
+        </label>
+
+        <div class="preview-card span-2">
+          <p class="eyebrow">Precio sugerido</p>
+          <strong id="catalog-price-preview">0</strong>
+          <p>Vista previa calculada con la regla actual y el modo de redondeo configurado.</p>
+        </div>
+
+        <label class="span-2">
+          <span>Notas internas</span>
+          <textarea name="notes_internal" rows="4">{{ form_data.notes_internal or '' }}</textarea>
+        </label>
+
+        <label class="span-2">
+          <span>Notas para cotización</span>
+          <textarea name="notes_quote" rows="4">{{ form_data.notes_quote or '' }}</textarea>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <a class="button secondary" href="/catalog">Cancelar</a>
+        <button class="button primary" type="submit">Guardar item</button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

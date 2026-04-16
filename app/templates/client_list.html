@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Base comercial</p>
+      <h1>Clientes</h1>
+      <p class="section-copy">Guarda los datos principales para completar una cotización en menos pasos.</p>
+    </div>
+    <a class="button primary" href="/clients/new">Nuevo cliente</a>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for client in clients %}
+            <tr>
+              <td>{{ client.name }}</td>
+              <td>{{ client.email or "Sin correo" }}</td>
+              <td>{{ client.phone or "Sin teléfono" }}</td>
+              <td>{{ client.address or "Sin dirección" }}</td>
+              <td><a href="/clients/{{ client.id }}/edit">Editar</a></td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="empty-row">No hay clientes guardados todavía.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

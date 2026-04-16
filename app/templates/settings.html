@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración | Cotizaciones{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Parámetros generales</p>
+      <h1>Configuración de la organización</h1>
+      <p class="section-copy">Controla prefijo, moneda, IVA, redondeo y el logo que se incrusta en el Excel.</p>
+    </div>
+  </section>
+
+  <section class="form-panel split">
+    <div class="form-side">
+      {% if error %}
+        <p class="form-alert error">{{ error }}</p>
+      {% endif %}
+      {% if success %}
+        <p class="form-alert success">{{ success }}</p>
+      {% endif %}
+
+      <form method="post" action="/settings" enctype="multipart/form-data" class="app-form">
+        <div class="form-grid">
+          <label class="span-2">
+            <span>Nombre de la organización</span>
+            <input type="text" name="org_name" value="{{ settings.org_name }}">
+          </label>
+
+          <label>
+            <span>Prefijo cotización</span>
+            <input type="text" name="quote_prefix" value="{{ settings.quote_prefix }}">
+          </label>
+
+          <label>
+            <span>Siguiente consecutivo</span>
+            <input type="number" name="next_quote_number" min="1" value="{{ settings.next_quote_number }}">
+          </label>
+
+          <label>
+            <span>Moneda</span>
+            <input type="text" name="currency_code" value="{{ settings.currency_code }}">
+          </label>
+
+          <label>
+            <span>IVA %</span>
+            <input type="number" name="iva_rate" step="0.01" min="0" value="{{ settings.iva_rate }}">
+          </label>
+
+          <label>
+            <span>Redondeo</span>
+            <select name="rounding_mode">
+              <option value="integer" {% if settings.rounding_mode == "integer" %}selected{% endif %}>Entero</option>
+              <option value="2dec" {% if settings.rounding_mode == "2dec" %}selected{% endif %}>2 decimales</option>
+              <option value="nearest10" {% if settings.rounding_mode == "nearest10" %}selected{% endif %}>Múltiplo de 10</option>
+              <option value="nearest100" {% if settings.rounding_mode == "nearest100" %}selected{% endif %}>Múltiplo de 100</option>
+            </select>
+          </label>
+
+          <label class="span-2">
+            <span>Logo</span>
+            <input type="file" name="logo" accept=".png,.jpg,.jpeg">
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="button primary" type="submit">Guardar configuración</button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="preview-side">
+      <p class="eyebrow">Vista previa</p>
+      <h2>Logo actual</h2>
+      {% if settings.logo_filename %}
+        <img class="logo-preview" src="/media/{{ settings.logo_filename }}" alt="Logo actual">
+      {% else %}
+        <div class="logo-placeholder">Sin logo cargado</div>
+      {% endif %}
+      <p>El sistema normaliza el archivo a PNG para incrustarlo con mejor compatibilidad en Excel.</p>
+    </aside>
+  </section>
+{% endblock %}
