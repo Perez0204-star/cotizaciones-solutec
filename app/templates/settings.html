@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Configuración | Cotizaciones{% endblock %}
+{% block title %}Configuracion | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Parámetros generales</p>
-      <h1>Configuración de la organización</h1>
-      <p class="section-copy">Controla prefijo, moneda, IVA, redondeo y el logo que se incrusta en el Excel.</p>
+      <p class="eyebrow">Parametros generales</p>
+      <h1>Configuracion de la organizacion</h1>
+      <p class="section-copy">Controla prefijo, moneda, IVA, redondeo y el logo que se usa en PDF y pantalla.</p>
+    </div>
+    <div class="heading-actions">
+      <a class="button secondary" href="/admin/users">Ir a usuarios</a>
+      <a class="button primary" href="/platforms/new">Crear plataforma interna</a>
     </div>
   </section>
 
@@ -23,12 +27,86 @@
       <form method="post" action="/settings" enctype="multipart/form-data" class="app-form">
         <div class="form-grid">
           <label class="span-2">
-            <span>Nombre de la organización</span>
+            <span>Nombre comercial o empresa</span>
             <input type="text" name="org_name" value="{{ settings.org_name }}">
           </label>
 
+          <label class="span-2">
+            <span>Lema o slogan de la marca</span>
+            <input type="text" name="brand_slogan" value="{{ settings.brand_slogan or '' }}" placeholder="Ej: Conectamos ideas con tecnologia">
+          </label>
+
+          <label class="span-2">
+            <span>Razon social</span>
+            <input type="text" name="legal_name" value="{{ settings.legal_name or '' }}">
+          </label>
+
           <label>
-            <span>Prefijo cotización</span>
+            <span>NIT de la empresa</span>
+            <input type="text" name="company_nit" value="{{ settings.company_nit or '' }}" placeholder="Ej: 900.123.456-7">
+          </label>
+
+          <label>
+            <span>Correo de la empresa</span>
+            <input type="email" name="company_email" value="{{ settings.company_email or '' }}">
+          </label>
+
+          <label>
+            <span>Telefono de la empresa</span>
+            <input type="text" name="company_phone" value="{{ settings.company_phone or '' }}">
+          </label>
+
+          <label>
+            <span>WhatsApp para pedidos</span>
+            <input
+              type="text"
+              name="company_whatsapp"
+              value="{{ settings.company_whatsapp or '' }}"
+              placeholder="Ej: 3046041910 o https://wa.me/573046041910"
+            >
+          </label>
+
+          <label class="span-2">
+            <span>Direccion de la empresa</span>
+            <input type="text" name="company_address" value="{{ settings.company_address or '' }}">
+          </label>
+
+          <div class="span-2 quote-client-optional-panel quote-client-optional-panel-static">
+            <div class="quote-client-optional-head">
+              <div>
+                <strong>Acceso con Google</strong>
+                <p>Activa inicio de sesion con Google solo para usuarios cuyo correo ya exista en la base y haya sido registrado por el administrador.</p>
+              </div>
+            </div>
+
+            <div class="quote-client-optional-grid">
+              <label class="span-2">
+                <span>Google OAuth Client ID</span>
+                <input type="text" name="google_oauth_client_id" value="{{ settings.google_oauth_client_id or '' }}" placeholder="Ej: 1234567890-abc.apps.googleusercontent.com">
+              </label>
+
+              <label class="span-2">
+                <span>Google OAuth Client Secret</span>
+                <input type="text" name="google_oauth_client_secret" value="{{ settings.google_oauth_client_secret or '' }}" placeholder="Se guarda solo para el ingreso con Google">
+              </label>
+
+              <label class="span-2">
+                <span>Redirect URI de Google</span>
+                <input type="text" name="google_oauth_redirect_uri" value="{{ settings.google_oauth_redirect_uri or '' }}" placeholder="Ej: https://tu-dominio.com/auth/google/callback">
+              </label>
+
+              <label>
+                <span>Comportamiento del selector</span>
+                <select name="google_oauth_prompt">
+                  <option value="select_account" {% if (settings.google_oauth_prompt or 'select_account') == 'select_account' %}selected{% endif %}>Seleccionar cuenta</option>
+                  <option value="consent" {% if settings.google_oauth_prompt == 'consent' %}selected{% endif %}>Pedir consentimiento</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <label>
+            <span>Prefijo cotizacion</span>
             <input type="text" name="quote_prefix" value="{{ settings.quote_prefix }}">
           </label>
 
@@ -52,8 +130,8 @@
             <select name="rounding_mode">
               <option value="integer" {% if settings.rounding_mode == "integer" %}selected{% endif %}>Entero</option>
               <option value="2dec" {% if settings.rounding_mode == "2dec" %}selected{% endif %}>2 decimales</option>
-              <option value="nearest10" {% if settings.rounding_mode == "nearest10" %}selected{% endif %}>Múltiplo de 10</option>
-              <option value="nearest100" {% if settings.rounding_mode == "nearest100" %}selected{% endif %}>Múltiplo de 100</option>
+              <option value="nearest10" {% if settings.rounding_mode == "nearest10" %}selected{% endif %}>Multiplo de 10</option>
+              <option value="nearest100" {% if settings.rounding_mode == "nearest100" %}selected{% endif %}>Multiplo de 100</option>
             </select>
           </label>
 
@@ -64,20 +142,88 @@
         </div>
 
         <div class="form-actions">
-          <button class="button primary" type="submit">Guardar configuración</button>
+          <button class="button primary" type="submit">Guardar configuracion</button>
         </div>
       </form>
     </div>
 
-    <aside class="preview-side">
+    <aside class="preview-side platform-management-side">
       <p class="eyebrow">Vista previa</p>
-      <h2>Logo actual</h2>
+      <h2>Activo visual</h2>
       {% if settings.logo_filename %}
-        <img class="logo-preview" src="/media/{{ settings.logo_filename }}" alt="Logo actual">
+        <img class="logo-preview" src="{{ media_src(settings.logo_filename) }}" alt="Logo actual">
       {% else %}
         <div class="logo-placeholder">Sin logo cargado</div>
       {% endif %}
-      <p>El sistema normaliza el archivo a PNG para incrustarlo con mejor compatibilidad en Excel.</p>
+      <p>Solo los administradores pueden editar esta configuracion y administrar las plataformas internas desde este mismo panel.</p>
+
+      <div class="platform-side-head">
+        <div>
+          <p class="eyebrow">Plataformas registradas</p>
+          <h3>Empresas creadas en el sistema</h3>
+        </div>
+        <span class="badge muted">{{ platforms|length }} activas</span>
+      </div>
+
+      <div class="platform-admin-list sidebar-platform-list">
+        {% for platform in platforms %}
+          <article class="platform-admin-card">
+            <div class="platform-admin-head">
+              <strong>{{ platform.name }}</strong>
+              <div class="catalog-inline-badges">
+                {% if platform.is_primary %}
+                  <span class="badge good">Principal</span>
+                {% endif %}
+                {% if platform.slug == platform_slug %}
+                  <span class="badge muted">Actual</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <p class="platform-admin-slug">{{ platform.slug }}</p>
+            <p class="platform-admin-copy">{{ platform.brand_slogan or "Sin lema configurado." }}</p>
+
+            <div class="platform-admin-meta">
+              <div>
+                <span>Empresa</span>
+                <strong>{{ platform.name }}</strong>
+              </div>
+              <div>
+                <span>Usuario admin</span>
+                <strong>{{ platform.admin_username or "No registrado" }}</strong>
+              </div>
+              <div>
+                <span>Correo admin</span>
+                <strong>{{ platform.admin_email or "Sin correo registrado" }}</strong>
+              </div>
+              <div>
+                <span>Contrasena</span>
+                <strong>Protegida por seguridad</strong>
+              </div>
+            </div>
+
+            <div class="platform-admin-actions">
+              <a class="button secondary compact-button" href="{{ platform_login_url(platform.slug) }}">Abrir acceso</a>
+              {% if not platform.is_primary and platform.slug != platform_slug %}
+                <form method="post" action="/platforms/{{ platform.slug }}/delete" onsubmit="return confirm('Eliminar esta plataforma secundaria? Esta accion borrara su base de datos y archivos asociados.');">
+                  <button class="button danger compact-button" type="submit">Eliminar</button>
+                </form>
+              {% endif %}
+            </div>
+
+            <details class="platform-password-panel">
+              <summary>Cambiar contrasena del administrador</summary>
+              <form method="post" action="/platforms/{{ platform.slug }}/reset-password" class="platform-password-form">
+                <input type="password" name="password" placeholder="Nueva contrasena" required>
+                <input type="password" name="confirm_password" placeholder="Confirmar contrasena" required>
+                <button class="button secondary compact-button" type="submit">Actualizar acceso</button>
+              </form>
+            </details>
+
+            <small>Creada: {{ platform.created_at|display_date }}</small>
+          </article>
+        {% endfor %}
+      </div>
     </aside>
   </section>
 {% endblock %}

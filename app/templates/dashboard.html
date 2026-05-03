@@ -1,89 +1,186 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard | Cotizaciones{% endblock %}
+{% block title %}Dashboard | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
-  <section class="hero-card">
-    <div>
-      <p class="eyebrow">MVP operativo</p>
-      <h1>Catalogo, calculo y exportacion a Excel desde una sola base.</h1>
+  <section class="hero-card hero-card-tech dashboard-hero dashboard-command-grid">
+    <div class="dashboard-hero-copy">
+      <p class="eyebrow">Centro de control comercial</p>
+      <h1>Un panel más claro para vender, facturar y dar seguimiento sin perder tiempo.</h1>
       <p class="hero-copy">
-        Administra productos y servicios, arma cotizaciones con IVA y descarga un archivo .xlsx con una
-        estructura lista para entregar.
+        Consulta el estado real de tu operación, entra rápido a los procesos más usados y mantén a la vista
+        lo importante: pedidos, facturas, cartera, clientes y cotizaciones.
       </p>
+
+      <div class="dashboard-feature-pills">
+        <span>{{ stats.orders }} pedidos activos</span>
+        <span>{{ stats.invoices }} facturas emitidas</span>
+        <span>{{ stats.credits }} créditos abiertos</span>
+      </div>
+
+      <div class="hero-actions">
+        <a class="button primary" href="/quotes/new">Nueva cotización</a>
+        <a class="button secondary" href="/orders">Ver pedidos</a>
+        <a class="button secondary" href="/invoices">Abrir facturas</a>
+        <a class="button secondary" href="/credits">Revisar cartera</a>
+      </div>
+
+      <div class="dashboard-quick-grid">
+        <a class="dashboard-quick-card" href="/catalog">
+          <span class="eyebrow">Catálogo</span>
+          <strong>{{ stats.catalog }}</strong>
+          <small>Productos o servicios listos para vender.</small>
+        </a>
+        <a class="dashboard-quick-card" href="/clients">
+          <span class="eyebrow">Clientes</span>
+          <strong>{{ stats.clients }}</strong>
+          <small>Contactos disponibles para cotizar y facturar.</small>
+        </a>
+        <a class="dashboard-quick-card" href="/quotes">
+          <span class="eyebrow">Cotizaciones pendientes</span>
+          <strong>{{ stats.quotes_pending }}</strong>
+          <small>Documentos en seguimiento comercial.</small>
+        </a>
+      </div>
     </div>
-    <div class="hero-actions">
-      <a class="button primary" href="/quotes/new">Crear cotizacion</a>
-      <a class="button secondary" href="/catalog/new">Nuevo producto o servicio</a>
+
+    <div class="dashboard-insight-grid">
+      <article class="dashboard-insight-card">
+        <span class="eyebrow">Hoy</span>
+        <strong>{{ dashboard_date|display_date }}</strong>
+        <small>Fecha operativa para pedidos, cotizaciones y facturas.</small>
+      </article>
+      <article class="dashboard-insight-card">
+        <span class="eyebrow">Acceso actual</span>
+        <strong>{{ "Administrador" if current_user.is_admin else "Operativo" }}</strong>
+        <small>{{ current_user.full_name or current_user.username }}</small>
+      </article>
+      <article class="dashboard-insight-card">
+        <span class="eyebrow">Facturas</span>
+        <strong>{{ stats.invoices }}</strong>
+        <small>Documentos generados y listos para consulta.</small>
+      </article>
+      <article class="dashboard-insight-card">
+        <span class="eyebrow">Pedidos</span>
+        <strong>{{ stats.orders }}</strong>
+        <small>Solicitudes abiertas para cotizar o facturar.</small>
+      </article>
+      <article class="dashboard-insight-card wide">
+        <span class="eyebrow">Cartera activa</span>
+        <strong>{{ stats.credit_balance|money(settings.rounding_mode) }}</strong>
+        <small>{{ stats.credits }} factura{{ "" if stats.credits == 1 else "s" }} a crédito pendientes de recaudo.</small>
+      </article>
     </div>
   </section>
 
-  <section class="stats-grid">
-    <article class="stat-card">
-      <span>Catalogo</span>
-      <strong>{{ stats.catalog }}</strong>
-      <p>Items activos e inactivos registrados.</p>
+  <section class="dashboard-overview-grid">
+    <article class="panel dashboard-focus-panel">
+      <div class="panel-head panel-head-compact">
+        <div>
+          <p class="eyebrow">Resumen del momento</p>
+          <h2>Operación comercial</h2>
+        </div>
+        <span class="badge">{{ "Lista para operar" if settings.logo_filename else "Revisar marca" }}</span>
+      </div>
+      <div class="dashboard-focus-list">
+        <div class="dashboard-focus-row">
+          <span>Pedidos por atender</span>
+          <strong>{{ stats.orders }}</strong>
+        </div>
+        <div class="dashboard-focus-row">
+          <span>Cotizaciones pendientes</span>
+          <strong>{{ stats.quotes_pending }}</strong>
+        </div>
+        <div class="dashboard-focus-row">
+          <span>Facturas emitidas</span>
+          <strong>{{ stats.invoices }}</strong>
+        </div>
+        <div class="dashboard-focus-row">
+          <span>Saldo en cartera</span>
+          <strong>{{ stats.credit_balance|money(settings.rounding_mode) }}</strong>
+        </div>
+      </div>
     </article>
-    <article class="stat-card">
-      <span>Clientes</span>
-      <strong>{{ stats.clients }}</strong>
-      <p>Contactos disponibles para cotizar.</p>
-    </article>
-    <article class="stat-card">
-      <span>Cotizaciones</span>
-      <strong>{{ stats.quotes }}</strong>
-      <p>Documentos guardados en la base local.</p>
+
+    <article class="panel">
+      <div class="panel-head panel-head-compact">
+        <div>
+          <p class="eyebrow">Acciones rápidas</p>
+          <h2>Rutas de trabajo</h2>
+        </div>
+      </div>
+      <div class="dashboard-actions-stack">
+        <a class="dashboard-action-link" href="/catalog/new">
+          <strong>Crear producto</strong>
+          <small>Agrega nuevos items al catálogo con precio e inventario.</small>
+        </a>
+        <a class="dashboard-action-link" href="/clients/new">
+          <strong>Registrar cliente</strong>
+          <small>Crea un cliente nuevo para cotizar, vender o manejar cartera.</small>
+        </a>
+        <a class="dashboard-action-link" href="/catalog/share{{ platform_query }}">
+          <strong>Abrir catálogo compartido</strong>
+          <small>Revisa la vista pública y el flujo de pedidos por WhatsApp.</small>
+        </a>
+      </div>
     </article>
   </section>
 
-  <section class="panel-grid">
+  <section class="panel-grid dashboard-data-grid">
     <article class="panel">
       <div class="panel-head">
-        <h2>Ultimas cotizaciones</h2>
-        <a href="/quotes/new">Nueva</a>
+        <h2>Facturas recientes</h2>
+        <a href="/invoices">Ver todas</a>
       </div>
-      {% if recent_quotes %}
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Numero</th>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Total</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for quote in recent_quotes %}
-                <tr>
-                  <td><a href="/quotes/{{ quote.id }}">{{ quote.quote_number }}</a></td>
-                  <td>{{ quote.client_name }}</td>
-                  <td>{{ quote.quote_date }}</td>
-                  <td>{{ quote.total|money(settings.rounding_mode) }}</td>
-                  <td>
-                    <div class="row-actions">
-                      <a class="button secondary compact-button" href="/quotes/{{ quote.id }}">Abrir</a>
-                      <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('¿Eliminar esta cotización? Esta acción no se puede deshacer.');">
-                        <input type="hidden" name="next" value="/">
-                        <button class="button danger compact-button" type="submit">Eliminar</button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      {% if recent_invoices %}
+        <div class="stack-list">
+          {% for invoice in recent_invoices %}
+            <div class="stack-row">
+              <div>
+                <strong>{{ invoice.invoice_number }}</strong>
+                <p>{{ invoice.client_name }}</p>
+              </div>
+              <div class="row-meta">
+                <span>{{ invoice.quote_date|display_date }}</span>
+                <strong>{{ invoice.total|money(settings.rounding_mode) }}</strong>
+              </div>
+            </div>
+          {% endfor %}
         </div>
       {% else %}
-        <p class="empty-state">Todavia no hay cotizaciones creadas.</p>
+        <p class="empty-state">Todavía no hay facturas generadas.</p>
       {% endif %}
     </article>
 
     <article class="panel">
       <div class="panel-head">
-        <h2>Catalogo reciente</h2>
-        <a href="/catalog">Ver todo</a>
+        <h2>Pedidos activos</h2>
+        <a href="/orders">Ver pedidos</a>
+      </div>
+      {% if recent_orders %}
+        <div class="stack-list">
+          {% for order in recent_orders %}
+            <div class="stack-row">
+              <div>
+                <strong>{{ order.order_number }}</strong>
+                <p>{{ order.customer_name }}</p>
+              </div>
+              <div class="row-meta">
+                <span>{{ order.payment_status_label }}</span>
+                <strong>{{ order.total|money(settings.rounding_mode) }}</strong>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-state">No hay pedidos pendientes en este momento.</p>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h2>Catálogo activo</h2>
+        <a href="/catalog">Ver catálogo</a>
       </div>
       {% if catalog_items %}
         <div class="stack-list">
@@ -94,21 +191,21 @@
                 <p>{{ item.description }}</p>
               </div>
               <div class="row-meta">
-                <span>{{ item.item_type }}</span>
+                <span>{{ item.category_label }}</span>
                 <strong>{{ item.suggested_price|money(settings.rounding_mode) }}</strong>
               </div>
             </div>
           {% endfor %}
         </div>
       {% else %}
-        <p class="empty-state">Empieza creando productos o servicios para poblar el catalogo.</p>
+        <p class="empty-state">Empieza creando productos o servicios para poblar el catálogo.</p>
       {% endif %}
     </article>
 
     <article class="panel">
       <div class="panel-head">
-        <h2>Clientes</h2>
-        <a href="/clients/new">Agregar</a>
+        <h2>Clientes disponibles</h2>
+        <a href="/clients">Abrir clientes</a>
       </div>
       {% if clients %}
         <div class="stack-list">
@@ -116,16 +213,21 @@
             <div class="stack-row">
               <div>
                 <strong>{{ client.name }}</strong>
-                <p>{{ client.email or "Sin correo" }}</p>
+                <p>{{ client.address or "Sin dirección registrada" }}</p>
               </div>
               <div class="row-meta">
-                <span>{{ client.phone or "Sin telefono" }}</span>
+                <span>{{ client.phone or "Sin teléfono" }}</span>
+                {% if client.open_credit_count %}
+                  <strong>{{ client.open_credit_count }} crédito{{ "" if client.open_credit_count == 1 else "s" }}</strong>
+                {% else %}
+                  <strong>Sin cartera</strong>
+                {% endif %}
               </div>
             </div>
           {% endfor %}
         </div>
       {% else %}
-        <p class="empty-state">No hay clientes guardados todavia.</p>
+        <p class="empty-state">No hay clientes guardados todavía.</p>
       {% endif %}
     </article>
   </section>

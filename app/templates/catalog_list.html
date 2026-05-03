@@ -1,57 +1,146 @@
 {% extends "base.html" %}
 
-{% block title %}Catálogo | Cotizaciones{% endblock %}
+{% block title %}Catalogo | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
-  <section class="page-heading">
-    <div>
-      <p class="eyebrow">Productos y servicios</p>
-      <h1>Catálogo base</h1>
-      <p class="section-copy">Mantén costos, método de precio y notas listos para reutilizar en las cotizaciones.</p>
+  <section class="panel catalog-market-hero catalog-shop-hero">
+    <div class="catalog-market-copy">
+      <p class="eyebrow">Vitrina comercial</p>
+      <h1>Catalogo visual listo para compartir</h1>
+      <p class="section-copy">
+        Administra cada publicacion como una ficha comercial: galeria de imagenes,
+        descripcion clara, precio de venta y cantidades disponibles.
+      </p>
+      <div class="catalog-market-actions">
+        <a class="button secondary" href="{{ share_url }}" target="_blank" rel="noopener">Abrir catalogo compartido</a>
+        <button class="button secondary" type="button" data-copy-text="{{ share_url }}">Copiar enlace</button>
+        <a class="button primary" href="/catalog/new">Publicar nuevo item</a>
+      </div>
     </div>
-    <a class="button primary" href="/catalog/new">Nuevo item</a>
+    <div class="catalog-market-highlight">
+      <span class="catalog-market-badge">{{ items|length }} publicaciones</span>
+      <strong>Modo tienda</strong>
+      <p>La vista compartida mantiene el mismo carrito, el pedido por WhatsApp y la regla de inventario solo al facturar.</p>
+    </div>
   </section>
 
-  <section class="panel">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Tipo</th>
-            <th>Descripción</th>
-            <th>Costo</th>
-            <th>Modo</th>
-            <th>Precio sugerido</th>
-            <th>Margen real</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
-            <tr>
-              <td>{{ item.sku }}</td>
-              <td>{{ item.item_type }}</td>
-              <td>{{ item.description }}</td>
-              <td>{{ item.cost_amount|money(settings.rounding_mode) }}</td>
-              <td>{{ item.pricing_mode }}</td>
-              <td>{{ item.suggested_price|money(settings.rounding_mode) }}</td>
-              <td>{{ item.margin_real|percent }}%</td>
-              <td>
-                <span class="badge {% if item.active %}good{% else %}muted{% endif %}">
-                  {{ "Activo" if item.active else "Inactivo" }}
-                </span>
-              </td>
-              <td><a href="/catalog/{{ item.id }}/edit">Editar</a></td>
-            </tr>
-          {% else %}
-            <tr>
-              <td colspan="9" class="empty-row">No hay items cargados aún.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </section>
+  {% if items %}
+    <nav class="panel catalog-category-strip-wrap" aria-label="Categorias del catalogo">
+      <div class="catalog-category-strip-head">
+        <p class="eyebrow">Categorias</p>
+        <h2>Explora el catalogo por linea comercial</h2>
+      </div>
+      <div class="catalog-category-strip">
+        {% for category in category_sections %}
+          <a class="catalog-category-chip {% if category["count"] == 0 %}is-empty{% endif %}" href="#catalog-category-{{ category["slug"] }}">
+            <span>{{ category["label"] }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </nav>
+
+    {% for category in category_sections %}
+      <section class="catalog-category-block" id="catalog-category-{{ category["slug"] }}">
+        <div class="panel-head catalog-category-head">
+          <div>
+            <p class="eyebrow">Categoria</p>
+            <h2>{{ category["label"] }}</h2>
+          </div>
+        </div>
+
+        {% if category["items"] %}
+          <div class="catalog-shop-list">
+            {% for item in category["items"] %}
+              <article class="panel catalog-shop-card">
+                <div class="catalog-gallery" data-gallery data-gallery-title="{{ item.description }}">
+                  {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item.description }}" class="catalog-gallery-main" data-gallery-main>
+                    <button class="catalog-gallery-open" type="button" data-gallery-open>
+                      Ver imagenes{% if item.images|length > 1 %} ({{ item.images|length }}){% endif %}
+                    </button>
+                  {% else %}
+                    <div class="catalog-gallery-main placeholder">Sin imagen</div>
+                  {% endif %}
+
+                  {% if item.images|length > 1 %}
+                    <div class="catalog-gallery-thumbs" aria-label="Imagenes de {{ item.description }}">
+                      {% for image in item.images %}
+                        <button class="catalog-gallery-thumb {% if loop.first %}active{% endif %}" type="button" data-gallery-thumb="{{ image.url }}">
+                          <img src="{{ image.url }}" alt="Imagen {{ loop.index }} de {{ item.description }}">
+                        </button>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="catalog-shop-info">
+                  <div class="catalog-shop-title-row">
+                    <div>
+                      <div class="catalog-inline-badges">
+                        <span class="badge muted">{{ item.category_label }}</span>
+                        <span class="badge muted">{{ "Producto" if item.item_type == "PRODUCT" else "Servicio" }}</span>
+                      </div>
+                      <h2>{{ item.description }}</h2>
+                    </div>
+                    <span class="badge {% if item.active %}good{% else %}muted{% endif %}">
+                      {{ "Activo" if item.active else "Inactivo" }}
+                    </span>
+                  </div>
+
+                  <div class="catalog-shop-metrics">
+                    <div>
+                      <span>Precio</span>
+                      <strong>{{ item.suggested_price|money(settings.rounding_mode) }}</strong>
+                    </div>
+                    <div>
+                      <span>Disponibles</span>
+                      <strong>{{ item.available_qty|money("2dec") }}</strong>
+                    </div>
+                  </div>
+
+                  <div class="catalog-product-description">
+                    <span>Descripcion del producto</span>
+                    <p>{{ item.notes_quote or "Sin descripcion adicional registrada." }}</p>
+                  </div>
+
+                  <div class="catalog-market-footer">
+                    {% if item.video_url %}
+                      <button class="button secondary compact-button" type="button" data-video-toggle="video-{{ item.id }}">Ver video</button>
+                      <a class="button secondary compact-button" href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir enlace</a>
+                    {% endif %}
+                    <a class="button secondary compact-button" href="/catalog/{{ item.id }}/edit">Editar publicacion</a>
+                    <form method="post" action="/catalog/{{ item.id }}/delete" onsubmit="return confirm('Eliminar este producto del catalogo?');">
+                      <button class="button danger compact-button" type="submit">Eliminar</button>
+                    </form>
+                  </div>
+
+                  {% if item.video_embed_url %}
+                    <div class="catalog-video-player hidden" id="video-{{ item.id }}">
+                      <iframe
+                        data-src="{{ item.video_embed_url }}"
+                        title="Video de {{ item.description }}"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                      ></iframe>
+                    </div>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <article class="panel empty-state-panel compact-empty">
+            <h3>Sin publicaciones en {{ category["label"]|lower }}</h3>
+            <p class="section-copy">Puedes crear productos o servicios de esta categoria cuando lo necesites.</p>
+          </article>
+        {% endif %}
+      </section>
+    {% endfor %}
+  {% else %}
+    <article class="panel empty-state-panel">
+      <h2>No hay items creados todavia</h2>
+      <p class="section-copy">Empieza cargando productos o servicios con imagenes, precio y disponibilidad para convertir el catalogo en una vitrina comercial.</p>
+    </article>
+  {% endif %}
 {% endblock %}

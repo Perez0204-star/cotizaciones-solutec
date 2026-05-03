@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Cotizaciones | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Buscador comercial</p>
+      <h1>Cotizaciones guardadas</h1>
+      <p class="section-copy">Encuentra documentos por numero, cliente, ubicacion o solicitado por cuando el volumen crezca.</p>
+    </div>
+    <a class="button primary" href="/quotes/new">Nueva cotizacion</a>
+  </section>
+
+  <section class="panel search-panel">
+    <form method="get" action="/quotes" class="search-form">
+      <label class="search-field">
+        <span>Busqueda</span>
+        <input type="search" name="q" value="{{ search_term or '' }}" placeholder="Ejemplo: COT-000012, cliente o ubicacion">
+      </label>
+      <div class="search-actions">
+        <button class="button primary" type="submit">Buscar</button>
+        {% if search_term %}
+          <a class="button secondary" href="/quotes">Limpiar</a>
+        {% endif %}
+      </div>
+    </form>
+    <div class="search-summary">
+      <strong>{{ quote_count }}</strong>
+      <span>{{ "resultado" if quote_count == 1 else "resultados" }}</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Numero</th>
+            <th>Titulo</th>
+            <th>Cliente</th>
+            <th>Ubicacion</th>
+            <th>Solicitado por</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for quote in quotes %}
+            <tr>
+              <td><a href="/quotes/{{ quote.id }}">{{ quote.quote_number }}</a></td>
+              <td>{{ quote.title }}</td>
+              <td>{{ quote.client_name }}</td>
+              <td>{{ quote.location }}</td>
+              <td>{{ quote.requested_by }}</td>
+              <td>{{ quote.quote_date }}</td>
+              <td><span class="badge">{{ quote_status_label(quote.status) }}</span></td>
+              <td>{{ quote.total|money(settings.rounding_mode) }}</td>
+              <td>
+                <div class="row-actions">
+                  <a class="button secondary compact-button" href="/quotes/{{ quote.id }}">Abrir</a>
+                  <a class="button secondary compact-button" href="/quotes/{{ quote.id }}/edit">Editar</a>
+                  {% if quote.status in ['PAID', 'CREDIT'] %}
+                    <a class="button secondary compact-button" href="/quotes/{{ quote.id }}/invoice">Ver factura</a>
+                  {% else %}
+                    <form method="post" action="/quotes/{{ quote.id }}/issue-invoice" class="inline-form">
+                      <input type="hidden" name="payment_mode" value="cash">
+                      <button class="button primary compact-button" type="submit">Contado</button>
+                    </form>
+                    <form method="post" action="/quotes/{{ quote.id }}/issue-invoice" class="inline-form">
+                      <input type="hidden" name="payment_mode" value="credit">
+                      <button class="button secondary compact-button" type="submit">Credito</button>
+                    </form>
+                    {% if quote.status == 'INVOICED' %}
+                      <a class="button secondary compact-button" href="/quotes/{{ quote.id }}/invoice">Ver factura</a>
+                    {% endif %}
+                  {% endif %}
+                  <a class="button secondary compact-button" href="/quotes/{{ quote.id }}/export-pdf">PDF</a>
+                  <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('Eliminar esta cotizacion? Esta accion no se puede deshacer.');">
+                    <input type="hidden" name="next" value="/quotes">
+                    <button class="button danger compact-button" type="submit">Eliminar</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="9" class="empty-row">No se encontraron cotizaciones con ese criterio.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

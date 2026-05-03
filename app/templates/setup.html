@@ -1,36 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}Crear Acceso | Cotizaciones{% endblock %}
+{% block title %}
+  {% if creation_mode == 'platform' %}
+    Crear plataforma | {{ settings.org_name }}
+  {% else %}
+    Crear Acceso | {{ settings.org_name }}
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   <section class="auth-shell">
-    <article class="auth-card">
-      <p class="eyebrow">Primer acceso</p>
-      <h1>{{ auth_title }}</h1>
-      <p class="section-copy">{{ auth_intro }}</p>
+    <article class="auth-card auth-card-tech">
+      <div class="auth-stage">
+        <p class="eyebrow">Primer acceso</p>
+        <h1>{{ auth_title }}</h1>
+        <p class="section-copy">{{ auth_intro }}</p>
 
-      {% if error %}
-        <p class="form-alert error">{{ error }}</p>
-      {% endif %}
+        <div class="tech-visual">
+          <div class="tech-ring tech-ring-a"></div>
+          <div class="tech-ring tech-ring-b"></div>
+          <div class="tech-copy-card">
+            <strong>{% if creation_mode == 'platform' %}Nueva plataforma{% else %}Cuenta principal{% endif %}</strong>
+            <p>
+              {% if creation_mode == 'platform' %}
+                La nueva empresa tendra base independiente, marca propia y un administrador separado desde el primer acceso.
+              {% else %}
+                Este perfil controlara usuarios, logo institucional, correos de recuperacion y permisos administrativos.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <form method="post" action="/setup" class="app-form auth-form">
-        <label>
-          <span>Usuario</span>
-          <input type="text" name="username" value="{{ username or '' }}" autocomplete="username" required>
-        </label>
+      <div class="auth-form-panel">
+        <div class="auth-form-header">
+          <p class="eyebrow">Administrador</p>
+          <h2>Crear acceso principal</h2>
+        </div>
 
-        <label>
-          <span>Contrasena</span>
-          <input type="password" name="password" autocomplete="new-password" required>
-        </label>
+        {% if error %}
+          <p class="form-alert error">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+          <p class="form-alert success">{{ success }}</p>
+        {% endif %}
+        {% if creation_mode == 'platform' and platform_login_url %}
+          <div class="form-alert success">
+            <strong>{{ created_platform_name or "Nueva plataforma" }}</strong> creada correctamente.
+            <a href="{{ platform_login_url }}">Abrir acceso de la nueva plataforma</a>
+          </div>
+        {% endif %}
 
-        <label>
-          <span>Confirmar contrasena</span>
-          <input type="password" name="confirm_password" autocomplete="new-password" required>
-        </label>
+        <form method="post" action="{% if creation_mode == 'platform' %}/platforms/new{% else %}/setup{{ platform_query }}{% endif %}" class="app-form auth-form">
+          {% if creation_mode == 'platform' %}
+            <label>
+              <span>Nombre de la empresa o plataforma</span>
+              <input type="text" name="platform_name" value="{{ platform_name or '' }}" autocomplete="organization" required>
+            </label>
 
-        <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
-      </form>
+            <label>
+              <span>Lema o slogan</span>
+              <input type="text" name="brand_slogan" value="{{ brand_slogan or '' }}" autocomplete="off" placeholder="Conectamos ideas con tecnologia">
+            </label>
+          {% endif %}
+
+          <label>
+            <span>Nombre completo</span>
+            <input type="text" name="full_name" value="{{ full_name or '' }}" autocomplete="name" required>
+          </label>
+
+          <label>
+            <span>Correo electronico</span>
+            <input type="email" name="email" value="{{ email or '' }}" autocomplete="email" required>
+          </label>
+
+          <label>
+            <span>Usuario</span>
+            <input type="text" name="username" value="{{ username or '' }}" autocomplete="username" required>
+          </label>
+
+          <label>
+            <span>Contrasena</span>
+            <input type="password" name="password" autocomplete="new-password" required>
+          </label>
+
+          <label>
+            <span>Confirmar contrasena</span>
+            <input type="password" name="confirm_password" autocomplete="new-password" required>
+          </label>
+
+          <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
+        </form>
+
+        {% if creation_mode == 'platform' %}
+          <div class="auth-links auth-links-end">
+            <a href="/">Volver al panel</a>
+          </div>
+        {% endif %}
+      </div>
     </article>
   </section>
 {% endblock %}

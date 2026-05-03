@@ -1,1 +1,1 @@
-"""Service layer for pricing, uploads, and Excel export."""
+"""Service layer for pricing, uploads, communications, and PDF export."""

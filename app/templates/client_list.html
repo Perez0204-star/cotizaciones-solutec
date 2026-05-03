@@ -1,41 +1,91 @@
 {% extends "base.html" %}
 
-{% block title %}Clientes | Cotizaciones{% endblock %}
+{% block title %}Clientes | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
       <p class="eyebrow">Base comercial</p>
       <h1>Clientes</h1>
-      <p class="section-copy">Guarda los datos principales para completar una cotización en menos pasos.</p>
+      <p class="section-copy">Guarda empresas y personas naturales para completar cotizaciones y facturas en menos pasos.</p>
     </div>
     <a class="button primary" href="/clients/new">Nuevo cliente</a>
   </section>
 
   <section class="panel">
+    {% if success == "client-created" %}
+      <p class="form-alert success">Cliente creado correctamente.</p>
+    {% elif success == "client-updated" %}
+      <p class="form-alert success">Cliente actualizado correctamente.</p>
+    {% elif success == "client-deleted" %}
+      <p class="form-alert success">Cliente eliminado correctamente.</p>
+    {% endif %}
+
+    <form method="get" action="/clients" class="toolbar-form">
+      <input type="search" name="q" value="{{ search_term or '' }}" placeholder="Buscar por nombre, telefono, direccion, documento o correo">
+      <button class="button secondary compact-button" type="submit">Buscar</button>
+      {% if search_term %}
+        <a class="button secondary compact-button" href="/clients">Limpiar</a>
+      {% endif %}
+    </form>
+
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th>Tipo</th>
             <th>Nombre</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
+            <th>Documento</th>
+            <th>Telefono</th>
+            <th>Direccion</th>
+            <th>Facturas a credito</th>
+            <th>Saldo cartera</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {% for client in clients %}
             <tr>
+              <td>{{ "Persona natural" if client.client_type == "PERSONAL" else "Empresa" }}</td>
               <td>{{ client.name }}</td>
-              <td>{{ client.email or "Sin correo" }}</td>
-              <td>{{ client.phone or "Sin teléfono" }}</td>
-              <td>{{ client.address or "Sin dirección" }}</td>
-              <td><a href="/clients/{{ client.id }}/edit">Editar</a></td>
+              <td>
+                {% if client.document_type or client.document_number %}
+                  {{ client.document_type or "Doc." }} {{ client.document_number or "" }}
+                {% else %}
+                  Sin documento
+                {% endif %}
+              </td>
+              <td>{{ client.phone or "Sin telefono" }}</td>
+              <td>{{ client.address or "Sin direccion" }}</td>
+              <td>{{ client.open_credit_count or 0 }}</td>
+              <td>
+                {% if client.open_credit_balance %}
+                  <strong>{{ client.open_credit_balance|money(settings.rounding_mode) }}</strong>
+                {% else %}
+                  Sin saldo
+                {% endif %}
+              </td>
+              <td>
+                <div class="row-actions">
+                  <a class="button secondary compact-button" href="/credits?client_id={{ client.id }}">Ver cartera</a>
+                  <a class="button secondary compact-button" href="/clients/{{ client.id }}/edit">Editar cliente</a>
+                  {% if current_user and current_user.is_admin %}
+                    <form method="post" action="/clients/{{ client.id }}/delete" class="inline-form" onsubmit="return confirm('Eliminar este cliente? Las cotizaciones existentes conservaran sus datos guardados.');">
+                      <button class="button danger compact-button" type="submit">Eliminar</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
             </tr>
           {% else %}
             <tr>
-              <td colspan="5" class="empty-row">No hay clientes guardados todavía.</td>
+              <td colspan="8" class="empty-row">
+                {% if search_term %}
+                  No encontramos clientes con ese criterio de busqueda.
+                {% else %}
+                  No hay clientes guardados todavia.
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>

@@ -1,6 +1,6 @@
 # Cotizaciones Web
 
-Aplicacion en Python para administrar productos y servicios, crear cotizaciones, subir logo y exportar Excel o PDF con formato de plantilla.
+Aplicacion en Python para administrar productos y servicios, crear cotizaciones, subir logo y generar PDF con formato profesional.
 
 ## Incluye
 
@@ -8,17 +8,17 @@ Aplicacion en Python para administrar productos y servicios, crear cotizaciones,
 - Gestion simple de clientes.
 - Configuracion general de organizacion, prefijo, IVA, moneda y redondeo.
 - Constructor de cotizaciones con calculo en tiempo real.
-- Exportacion a Excel con plantilla, celdas combinadas, estilos y logo incrustado.
 - Exportacion a PDF.
 - Inicio de sesion con usuario y contrasena.
 - Persistencia local con SQLite.
+- PWA instalable en Android y iPhone.
+- Contenedor movil con Capacitor en `mobile-app`.
 
 ## Stack
 
 - FastAPI
 - Jinja2
 - SQLite
-- openpyxl
 - Pillow
 
 ## Como ejecutar
@@ -86,6 +86,27 @@ Antes de publicarla:
 4. Publica detras de HTTPS
 5. No compartas la base SQLite sin backups
 
+## App movil
+
+La base web ya puede instalarse como PWA y tambien convertirse en app nativa usando Capacitor.
+
+Revisa:
+
+- `GUIA_DOMINIO_Y_APP_MOVIL.md`
+- `mobile-app/README.md`
+
+Para compilar Android desde Windows:
+
+```powershell
+cd mobile-app
+npm install
+npm run sync
+npm run add:android
+npm run open:android
+```
+
+Para iOS necesitas macOS y Xcode.
+
 ## Verificacion rapida
 
 1. Abre `/setup` y crea el usuario administrador
@@ -94,4 +115,4 @@ Antes de publicarla:
 4. Crea productos o servicios en `/catalog`
 5. Crea un cliente en `/clients`
 6. Genera una cotizacion desde `/quotes/new`
-7. Descarga el Excel desde el detalle de la cotizacion
+7. Descarga el PDF o imprime desde el detalle de la cotizacion

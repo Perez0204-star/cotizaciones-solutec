@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Facturas | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Control de ventas</p>
+      <h1>Facturas generadas</h1>
+      <p class="section-copy">Consulta las facturas de contado y credito sin mezclarlas con los pedidos pendientes.</p>
+    </div>
+    <a class="button secondary" href="/orders">Ver pedidos pendientes</a>
+  </section>
+
+  <section class="panel search-panel">
+    <form method="get" action="/invoices" class="search-form">
+      <label class="search-field">
+        <span>Buscar factura</span>
+        <input type="search" name="q" value="{{ search_term or '' }}" placeholder="Ejemplo: FAC-000012, cliente, telefono o fecha">
+      </label>
+      <div class="search-actions">
+        <button class="button primary" type="submit">Buscar</button>
+        {% if search_term %}
+          <a class="button secondary" href="/invoices">Limpiar</a>
+        {% endif %}
+      </div>
+    </form>
+    <div class="search-summary">
+      <strong>{{ invoice_count }}</strong>
+      <span>{{ "factura" if invoice_count == 1 else "facturas" }}</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Factura</th>
+            <th>Cotizacion base</th>
+            <th>Cliente</th>
+            <th>Telefono</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+            <tr>
+              <td><a href="/quotes/{{ invoice.id }}/invoice">{{ invoice.invoice_number }}</a></td>
+              <td>{{ invoice.quote_number }}</td>
+              <td>{{ invoice.client_name }}</td>
+              <td>{{ invoice.client_phone or "No registrado" }}</td>
+              <td>{{ invoice.quote_date|display_date }}</td>
+              <td><span class="badge">{{ quote_status_label(invoice.status) }}</span></td>
+              <td>{{ invoice.total|money(settings.rounding_mode) }}</td>
+              <td>
+                <div class="row-actions">
+                  <a class="button secondary compact-button" href="/quotes/{{ invoice.id }}/invoice">Abrir</a>
+                  <button class="button secondary compact-button" type="button" data-print-url="/quotes/{{ invoice.id }}/invoice">Imprimir</button>
+                  <a class="button secondary compact-button" href="/quotes/{{ invoice.id }}/invoice/export-pdf">PDF</a>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="empty-row">No se encontraron facturas con ese criterio.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

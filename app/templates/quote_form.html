@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ form_title }} | Cotizaciones{% endblock %}
+{% block title %}{{ form_title }} | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
   <section class="page-heading">
@@ -11,6 +11,10 @@
     </div>
     {% if quote_number %}
       <div class="quote-number-chip">{{ quote_number }}</div>
+    {% elif document_mode == "invoice" and form_data.invoice_payment_mode %}
+      <div class="quote-number-chip">
+        {{ "Factura a credito" if form_data.invoice_payment_mode == "credit" else "Factura de contado" }}
+      </div>
     {% endif %}
   </section>
 
@@ -23,47 +27,180 @@
       {% if quote_id %}
         <input type="hidden" name="quote_id" value="{{ quote_id }}">
       {% endif %}
+      {% if origin_order_id %}
+        <input type="hidden" name="origin_order_id" value="{{ origin_order_id }}">
+      {% endif %}
+      <input type="hidden" name="document_mode" value="{{ document_mode or 'quote' }}">
+      <input type="hidden" name="invoice_payment_mode" value="{{ form_data.invoice_payment_mode or 'cash' }}">
+      <input type="hidden" name="title" value="{{ form_data.title or 'COTIZACION EXPLORATORIA' }}">
+      <input type="hidden" name="requested_by" value="{{ form_data.requested_by or '' }}">
+      <input id="quote-location" type="hidden" name="location" value="{{ form_data.location or form_data.client_address or '' }}">
 
       <div class="form-grid">
-        <label class="span-2">
-          <span>Titulo</span>
-          <input type="text" name="title" value="{{ form_data.title or 'COTIZACION EXPLORATORIA' }}">
-        </label>
+        <div class="span-2 quote-client-shell">
+          <input id="client-record-id" type="hidden" name="client_record_id" value="">
+          <input id="consumer-final" type="hidden" name="consumer_final" value="{{ 1 if form_data.client_type == 'CONSUMER' or form_data.consumer_final else 0 }}">
+          <input id="client-type" type="hidden" name="client_type" value="{{ form_data.client_type or 'CONSUMER' }}">
+          <input id="client-name" type="hidden" name="client_name" value="{{ form_data.client_name or '' }}">
+          <input id="client-phone" type="hidden" name="client_phone" value="{{ form_data.client_phone or '' }}">
+          <input id="client-address" type="hidden" name="client_address" value="{{ form_data.client_address or '' }}">
+          <input id="client-document-type" type="hidden" name="client_document_type" value="{{ form_data.client_document_type or '' }}">
+          <input id="client-document-number" type="hidden" name="client_document_number" value="{{ form_data.client_document_number or '' }}">
+          <input id="client-email" type="hidden" name="client_email" value="{{ form_data.client_email or '' }}">
 
-        <label>
-          <span>Ubicacion</span>
-          <input type="text" name="location" value="{{ form_data.location or '' }}" required>
-        </label>
+          <div class="quote-client-toolbar">
+            <div>
+              <p class="eyebrow">Cliente</p>
+              <h2>Buscar o crear cliente</h2>
+              <p class="builder-copy">Selecciona un cliente existente o crea uno nuevo desde este mismo panel sin llenar campos sueltos en la cotizacion.</p>
+            </div>
+            <div class="quote-client-toolbar-actions">
+              <button class="button secondary compact-button" type="button" id="client-browser-toggle">Buscar clientes</button>
+              <button class="button secondary compact-button" type="button" id="client-quick-create">Crear cliente</button>
+            </div>
+          </div>
 
-        <label>
-          <span>Fecha</span>
-          <input type="date" name="quote_date" value="{{ form_data.quote_date or '' }}" required>
-        </label>
+          <div class="quote-client-toolbar-meta">
+            <label class="quote-client-date-field">
+              <span>Fecha de la cotizacion</span>
+              <input type="date" name="quote_date" value="{{ form_data.quote_date or '' }}" required>
+            </label>
+          </div>
 
-        <label>
-          <span>Solicitado por</span>
-          <input type="text" name="requested_by" value="{{ form_data.requested_by or '' }}" required>
-        </label>
+          <div id="client-selected-card" class="quote-client-selected-card{% if not form_data.client_name %} is-empty{% endif %}">
+            <div class="quote-client-selected-head">
+              <p class="eyebrow">Cliente seleccionado</p>
+              <span id="client-selected-status" class="quote-client-selected-status">
+                {{ "Sin cliente" if not form_data.client_name else "Listo para cotizar" }}
+              </span>
+            </div>
 
-        <label>
-          <span>Cliente guardado</span>
-          <select id="client-select">
-            <option value="">Seleccionar...</option>
-            {% for client in clients %}
-              <option value="{{ client.id }}">{{ client.name }}</option>
-            {% endfor %}
-          </select>
-        </label>
+            <div id="client-selected-empty" class="quote-client-selected-empty{% if form_data.client_name %} hidden{% endif %}">
+              Selecciona un cliente para continuar.
+            </div>
 
-        <label>
-          <span>Cliente</span>
-          <input id="client-name" type="text" name="client_name" value="{{ form_data.client_name or '' }}" required>
-        </label>
+            <div id="client-selected-data" class="quote-client-selected-data{% if not form_data.client_name %} hidden{% endif %}">
+              <div class="quote-client-selected-title">
+                <strong id="client-selected-name">{{ form_data.client_name or '' }}</strong>
+                <span id="client-selected-type">
+                  {{ "Persona juridica / empresa" if form_data.client_type == "BUSINESS" else "Persona natural" if form_data.client_type == "PERSONAL" else "Cliente particular / consumidor final" }}
+                </span>
+              </div>
 
-        <label>
-          <span>Email cliente</span>
-          <input id="client-email" type="email" name="client_email" value="{{ form_data.client_email or '' }}">
-        </label>
+              <div class="quote-client-selected-grid">
+                <p>
+                  <span>Telefono</span>
+                  <strong id="client-selected-phone">{{ form_data.client_phone or 'No registrado' }}</strong>
+                </p>
+                <p>
+                  <span>Ubicacion</span>
+                  <strong id="client-selected-address">{{ form_data.client_address or 'Sin direccion registrada' }}</strong>
+                </p>
+                <p id="client-selected-document-row"{% if not form_data.client_document_number %} class="hidden"{% endif %}>
+                  <span>Documento</span>
+                  <strong id="client-selected-document">
+                    {% if form_data.client_document_number %}
+                      {{ (form_data.client_document_type or '') ~ (' ' if form_data.client_document_type else '') ~ form_data.client_document_number }}
+                    {% endif %}
+                  </strong>
+                </p>
+                <p id="client-selected-email-row"{% if not form_data.client_email %} class="hidden"{% endif %}>
+                  <span>Correo</span>
+                  <strong id="client-selected-email">{{ form_data.client_email or '' }}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="client-browser-panel" class="quote-client-browser hidden">
+            <div class="quote-client-browser-grid">
+              <div class="quote-client-browser-column">
+                <label class="quote-client-search-field">
+                  <span>Buscar cliente existente</span>
+                  <input id="client-search-query" type="text" placeholder="Nombre, telefono, direccion o documento">
+                </label>
+
+                <div id="client-search-results" class="quote-client-results"></div>
+                <p id="client-search-empty" class="quote-client-empty hidden">No encontramos coincidencias. Puedes crear el cliente ahora mismo desde este mismo panel.</p>
+              </div>
+
+              <div class="quote-client-editor">
+                <div class="quote-client-editor-head">
+                  <div>
+                    <strong>Crear o editar cliente</strong>
+                    <p>Para cliente particular solo se usan nombre, telefono y ubicacion. Documento y correo son opcionales y solo apareceran en la cotizacion si los agregas.</p>
+                  </div>
+                </div>
+
+                <div class="quote-client-editor-grid">
+                  <label>
+                    <span>Tipo de cliente</span>
+                    <select id="client-type-editor">
+                      <option value="CONSUMER" {% if form_data.client_type == "CONSUMER" or not form_data.client_type %}selected{% endif %}>Cliente particular / consumidor final</option>
+                      <option value="PERSONAL" {% if form_data.client_type == "PERSONAL" %}selected{% endif %}>Persona natural</option>
+                      <option value="BUSINESS" {% if form_data.client_type == "BUSINESS" %}selected{% endif %}>Persona juridica / empresa</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span id="client-name-label">Nombre del cliente</span>
+                    <input id="client-name-editor" type="text" value="{{ form_data.client_name or '' }}" placeholder="Nombre del cliente">
+                  </label>
+
+                  <label>
+                    <span>Telefono cliente</span>
+                    <input id="client-phone-editor" type="text" value="{{ form_data.client_phone or '' }}" placeholder="Telefono">
+                  </label>
+
+                  <label class="span-2">
+                    <span id="client-address-label">Ubicacion o direccion del cliente</span>
+                    <textarea id="client-address-editor" rows="3" placeholder="Direccion, ciudad o referencia">{{ form_data.client_address or '' }}</textarea>
+                  </label>
+                </div>
+
+                <div id="client-optional-panel" class="quote-client-optional-panel quote-client-optional-panel-static">
+                  <div class="quote-client-optional-head">
+                    <div>
+                      <strong>Datos opcionales del cliente</strong>
+                      <p>Documento y correo solo se incluyen cuando realmente los necesitas.</p>
+                    </div>
+                  </div>
+
+                  <div class="quote-client-optional-grid">
+                    <label>
+                      <span>Tipo de documento</span>
+                      <select id="client-document-type-editor">
+                        <option value="" {% if not form_data.client_document_type %}selected{% endif %}>No agregar</option>
+                        <option value="NIT" {% if form_data.client_document_type == "NIT" %}selected{% endif %}>NIT</option>
+                        <option value="CC" {% if form_data.client_document_type == "CC" %}selected{% endif %}>Cedula</option>
+                        <option value="CE" {% if form_data.client_document_type == "CE" %}selected{% endif %}>Cedula de extranjeria</option>
+                        <option value="RUT" {% if form_data.client_document_type == "RUT" %}selected{% endif %}>RUT</option>
+                        <option value="OTRO" {% if form_data.client_document_type == "OTRO" %}selected{% endif %}>Otro</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Numero de documento</span>
+                      <input id="client-document-number-editor" type="text" value="{{ form_data.client_document_number or '' }}" placeholder="Opcional">
+                    </label>
+
+                    <label class="span-2">
+                      <span>Email cliente</span>
+                      <input id="client-email-editor" type="email" value="{{ form_data.client_email or '' }}" placeholder="Opcional">
+                    </label>
+                  </div>
+                </div>
+
+                <div class="quote-client-actions quote-client-actions-panel">
+                  <button class="button secondary compact-button" type="button" id="client-apply-selection">Usar en la cotizacion</button>
+                  <button class="button secondary compact-button" type="button" id="client-save-quick">Guardar cliente en la base</button>
+                </div>
+
+                <span id="client-save-feedback" class="quote-client-feedback">Selecciona o crea un cliente y deja visibles en la cotizacion solo los datos realmente necesarios.</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <label>
           <span>Moneda</span>
@@ -87,7 +224,7 @@
       <section class="factor-panel">
         <div class="factor-brand-panel">
           {% if settings.logo_filename %}
-            <img class="factor-logo-preview" src="/media/{{ settings.logo_filename }}" alt="Logo de la cotizacion">
+                    <img class="factor-logo-preview" src="{{ media_src(settings.logo_filename) }}" alt="Logo de la cotizacion">
           {% else %}
             <div class="factor-logo-placeholder">Carga el logo desde configuracion para verlo aqui.</div>
           {% endif %}
@@ -124,6 +261,7 @@
               <th>Unidad</th>
               <th class="align-right">Cantidad</th>
               <th class="align-right">Precio</th>
+              <th>IVA</th>
               <th class="align-right">Total linea</th>
               <th></th>
             </tr>
@@ -143,9 +281,10 @@
       <template id="quote-row-template">
         <tr class="quote-row">
           <td>
-            <select name="source_item_id" class="catalog-select">
-              <option value="">Manual</option>
-            </select>
+            <div class="catalog-picker">
+              <input type="hidden" name="source_item_id" class="catalog-source-id" value="">
+              <input type="search" class="catalog-search" placeholder="Codigo o nombre" list="catalog-search-options" autocomplete="off">
+            </div>
           </td>
           <td><input type="text" name="sku" placeholder="SKU"></td>
           <td><textarea name="description" rows="2" placeholder="Descripcion"></textarea></td>
@@ -158,16 +297,29 @@
             <input type="hidden" name="discount_value" value="0">
             <input type="number" name="price_unit" step="0.01" min="0" value="0">
           </td>
+          <td>
+            <select name="taxable" class="taxable-select">
+              <option value="1">Con IVA</option>
+              <option value="0">Sin IVA</option>
+            </select>
+          </td>
           <td><output class="line-total-output">0</output></td>
           <td><button class="icon-button remove-line" type="button">x</button></td>
         </tr>
       </template>
 
       <div class="quote-footer">
-        <label class="notes-field">
-          <span>Notas</span>
-          <textarea name="notes" rows="5" placeholder="Condiciones, observaciones o comentarios comerciales.">{{ form_data.notes or '' }}</textarea>
-        </label>
+        <div class="quote-copy-fields">
+          <label class="notes-field">
+            <span>Notas de la cotizacion</span>
+            <textarea name="notes" rows="5" placeholder="Estas observaciones solo apareceran si escribes algo aqui.">{{ form_data.notes or '' }}</textarea>
+          </label>
+
+          <label class="notes-field">
+            <span>Mensaje final</span>
+            <input type="text" name="closing_message" value="{{ form_data.closing_message or '' }}" placeholder="Gracias por su atencion.">
+          </label>
+        </div>
 
         <aside class="totals-card">
           <p class="eyebrow">Totales</p>
@@ -176,7 +328,7 @@
             <strong id="subtotal-output">0</strong>
           </div>
           <div class="total-row">
-            <span>IVA</span>
+            <span>IVA gravado</span>
             <strong id="tax-output">0</strong>
           </div>
           <div class="total-row grand">
@@ -195,6 +347,7 @@
 {% endblock %}
 
 {% block scripts %}
+  <datalist id="catalog-search-options"></datalist>
   <script id="catalog-data" type="application/json">{{ catalog_json|safe }}</script>
   <script id="clients-data" type="application/json">{{ clients_json|safe }}</script>
   <script id="quote-items-data" type="application/json">{{ quote_items_json|safe }}</script>

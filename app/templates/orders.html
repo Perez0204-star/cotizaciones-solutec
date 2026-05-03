@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Embudo de venta</p>
+      <h1>Pedidos del catalogo</h1>
+      <p class="section-copy">Aqui solo aparecen pedidos pendientes de gestion. Cuando se facturan, pasan automaticamente a Facturas.</p>
+    </div>
+        <a class="button secondary" href="/catalog/share{{ platform_query }}">Abrir catalogo</a>
+  </section>
+
+  <section class="sales-funnel-strip">
+    <article>
+      <span>1</span>
+      <strong>Pedido</strong>
+      <small>Cliente selecciona productos.</small>
+    </article>
+    <article>
+      <span>2</span>
+      <strong>Contacto</strong>
+      <small>WhatsApp abre la conversacion.</small>
+    </article>
+    <article>
+      <span>3</span>
+      <strong>Cotizacion</strong>
+      <small>Vendedor genera el documento.</small>
+    </article>
+    <article>
+      <span>4</span>
+      <strong>Factura</strong>
+      <small>Se cierra la venta.</small>
+    </article>
+  </section>
+
+  <section class="panel">
+    <form method="get" action="/orders" class="search-form">
+      <input type="search" name="q" value="{{ search_term or '' }}" placeholder="Buscar por pedido, cliente, telefono o direccion">
+      <select name="status">
+        <option value="" {% if not status_filter %}selected{% endif %}>Todos los estados</option>
+        <option value="NEW" {% if status_filter == 'NEW' %}selected{% endif %}>Nuevo</option>
+        <option value="CONTACTED" {% if status_filter == 'CONTACTED' %}selected{% endif %}>Contactado</option>
+        <option value="QUOTED" {% if status_filter == 'QUOTED' %}selected{% endif %}>Cotizado</option>
+        <option value="INVOICED" {% if status_filter == 'INVOICED' %}selected{% endif %}>Facturado</option>
+        <option value="CLOSED" {% if status_filter == 'CLOSED' %}selected{% endif %}>Cerrado</option>
+      </select>
+      <button class="button secondary compact-button" type="submit">Filtrar</button>
+      {% if search_term or status_filter %}
+        <a class="button secondary compact-button" href="/orders">Limpiar</a>
+      {% endif %}
+    </form>
+  </section>
+
+  <section class="orders-grid">
+    {% for order in orders %}
+      <article class="panel order-card">
+        <div class="order-card-head">
+          <div>
+            <p class="eyebrow">{{ order.status_label }}</p>
+            <h2>{{ order.order_number }}</h2>
+            <p>{{ order.created_at|display_date }}</p>
+            {% if order.quote %}
+              <a class="table-subtext" href="/quotes/{{ order.quote.id }}">Cotizacion automatica {{ order.quote.quote_number }}</a>
+            {% endif %}
+          </div>
+          <strong>{{ order.total|money(settings.rounding_mode) }}</strong>
+        </div>
+
+        <div class="order-state-grid">
+          <p>
+            <span>Pago</span>
+            <strong>{{ order.payment_status_label }}</strong>
+            {% if order.paid_at %}
+              <small>{{ order.paid_at|display_date }}</small>
+            {% endif %}
+            {% if order.credit_id %}
+              <small>Cartera #{{ order.credit_id }}</small>
+            {% endif %}
+          </p>
+          <p>
+            <span>Subtotal</span>
+            <strong>{{ order.subtotal|money(settings.rounding_mode) }}</strong>
+          </p>
+          <p>
+            <span>IVA</span>
+            <strong>{{ order.tax_amount|money(settings.rounding_mode) }}</strong>
+          </p>
+        </div>
+
+        <div class="order-customer-grid">
+          <p>
+            <span>Cliente</span>
+            <strong>{{ order.customer_name }}</strong>
+          </p>
+          <p>
+            <span>Telefono</span>
+            <strong>{{ order.customer_phone or "No registrado" }}</strong>
+          </p>
+          <p class="span-2">
+            <span>Direccion</span>
+            <strong>{{ order.customer_address }}</strong>
+          </p>
+        </div>
+
+        <div class="table-wrap compact-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Producto</th>
+                <th>Cant.</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order["items"] %}
+                <tr>
+                  <td>{{ item.sku }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ item.qty|money("2dec") }}</td>
+                  <td>{{ item.line_total|money(settings.rounding_mode) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="order-actions">
+          <a class="button primary compact-button" href="/quotes/new?order_id={{ order.id }}&mode=quote">Cotizar pedido</a>
+          {% if order.payment_status not in ['PAID', 'CREDIT'] %}
+            <a class="button primary compact-button" href="/quotes/new?order_id={{ order.id }}&mode=invoice&payment=cash">Facturar contado</a>
+            <a class="button secondary compact-button" href="/quotes/new?order_id={{ order.id }}&mode=invoice&payment=credit">Facturar credito</a>
+          {% elif order.quote %}
+            <a class="button secondary compact-button" href="/quotes/{{ order.quote.id }}/invoice">Ver factura</a>
+          {% endif %}
+          <form method="post" action="/orders/{{ order.id }}/status" class="inline-form">
+            <input type="hidden" name="next" value="/orders{% if search_term or status_filter %}?q={{ search_term }}&status={{ status_filter }}{% endif %}">
+            <select name="status" aria-label="Cambiar estado de {{ order.order_number }}">
+              <option value="NEW" {% if order.status == 'NEW' %}selected{% endif %}>Nuevo</option>
+              <option value="CONTACTED" {% if order.status == 'CONTACTED' %}selected{% endif %}>Contactado</option>
+              <option value="QUOTED" {% if order.status == 'QUOTED' %}selected{% endif %}>Cotizado</option>
+              <option value="INVOICED" {% if order.status == 'INVOICED' %}selected{% endif %}>Facturado</option>
+              <option value="PAID" {% if order.status == 'PAID' %}selected{% endif %}>Pagado</option>
+              <option value="CREDIT" {% if order.status == 'CREDIT' %}selected{% endif %}>Credito</option>
+              <option value="CLOSED" {% if order.status == 'CLOSED' %}selected{% endif %}>Cerrado</option>
+            </select>
+            <button class="button secondary compact-button" type="submit">Actualizar</button>
+          </form>
+        </div>
+      </article>
+    {% else %}
+      <article class="panel empty-state-panel">
+        <h2>No hay pedidos pendientes</h2>
+        <p class="section-copy">Los pedidos facturados se mueven a la seccion Facturas para mantener limpio el embudo.</p>
+          <a class="button primary" href="/catalog/share{{ platform_query }}">Probar catalogo</a>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

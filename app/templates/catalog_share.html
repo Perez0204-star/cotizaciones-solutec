@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogo compartido | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="panel catalog-market-hero shared catalog-shop-hero">
+    <div class="catalog-market-copy">
+      <p class="eyebrow">Catalogo compartido</p>
+      <h1>Compra por catalogo y confirma por WhatsApp</h1>
+      <p class="section-copy">
+        Selecciona productos, registra tus datos basicos y envia el pedido directamente a nuestro WhatsApp.
+      </p>
+      <div class="catalog-market-actions">
+        <button class="button secondary" type="button" data-copy-text="{{ share_url }}">Copiar enlace</button>
+        <a class="button secondary" href="/login{{ platform_query }}">Ir al acceso seguro</a>
+      </div>
+    </div>
+    <div class="catalog-market-highlight">
+      <span class="catalog-market-badge">{{ items|length }} disponibles</span>
+      <strong>Pedido rapido</strong>
+      <p>Las tres categorias usan el mismo carrito, el mismo mensaje ordenado y la misma validacion de inventario.</p>
+    </div>
+  </section>
+
+  {% if items %}
+    <nav class="panel catalog-category-strip-wrap shared" aria-label="Categorias del catalogo">
+      <div class="catalog-category-strip-head">
+        <p class="eyebrow">Categorias</p>
+        <h2>Encuentra mas rapido lo que buscas</h2>
+      </div>
+      <div class="catalog-category-strip">
+        {% for category in category_sections %}
+          <a class="catalog-category-chip {% if category["count"] == 0 %}is-empty{% endif %}" href="#shared-category-{{ category["slug"] }}">
+            <span>{{ category["label"] }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </nav>
+  {% endif %}
+
+  <section class="catalog-store-layout">
+    <div>
+      {% if items %}
+        {% for category in category_sections %}
+          <section class="catalog-category-block" id="shared-category-{{ category["slug"] }}">
+            <div class="panel-head catalog-category-head">
+              <div>
+                <p class="eyebrow">Categoria</p>
+                <h2>{{ category["label"] }}</h2>
+              </div>
+            </div>
+
+            {% if category["items"] %}
+              <div class="catalog-shop-list">
+                {% for item in category["items"] %}
+                  {% set in_stock = item.available_qty|float > 0 %}
+                  <article class="panel catalog-shop-card shared-card">
+                    <div class="catalog-gallery" data-gallery data-gallery-title="{{ item.description }}">
+                      {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.description }}" class="catalog-gallery-main" data-gallery-main>
+                        <button class="catalog-gallery-open" type="button" data-gallery-open>
+                          Ver imagenes{% if item.images|length > 1 %} ({{ item.images|length }}){% endif %}
+                        </button>
+                      {% else %}
+                        <div class="catalog-gallery-main placeholder">Sin imagen</div>
+                      {% endif %}
+
+                      {% if item.images|length > 1 %}
+                        <div class="catalog-gallery-thumbs" aria-label="Imagenes de {{ item.description }}">
+                          {% for image in item.images %}
+                            <button class="catalog-gallery-thumb {% if loop.first %}active{% endif %}" type="button" data-gallery-thumb="{{ image.url }}">
+                              <img src="{{ image.url }}" alt="Imagen {{ loop.index }} de {{ item.description }}">
+                            </button>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+
+                    <div class="catalog-shop-info">
+                      <div class="catalog-shop-title-row">
+                        <div>
+                          <div class="catalog-inline-badges">
+                            <span class="badge muted">{{ item.category_label }}</span>
+                            <span class="badge muted">{{ "Producto" if item.item_type == "PRODUCT" else "Servicio" }}</span>
+                          </div>
+                          <h2>{{ item.description }}</h2>
+                        </div>
+                        <span class="badge {% if in_stock %}good{% else %}muted{% endif %}">
+                          {{ "Disponible" if in_stock else "Agotado" }}
+                        </span>
+                      </div>
+
+                      <div class="catalog-shop-metrics">
+                        <div>
+                          <span>Precio</span>
+                          <strong>{{ item.suggested_price|money(settings.rounding_mode) }}</strong>
+                        </div>
+                        <div>
+                          <span>Cantidad disponible</span>
+                          <strong>{{ item.available_qty|money("2dec") }}</strong>
+                        </div>
+                      </div>
+
+                      <div class="catalog-product-description">
+                        <span>Descripcion del producto</span>
+                        <p>{{ item.notes_quote or "Sin descripcion adicional registrada." }}</p>
+                      </div>
+
+                      <div class="catalog-market-footer">
+                        <button
+                          class="button primary compact-button"
+                          type="button"
+                          data-cart-add
+                          data-id="{{ item.id }}"
+                          data-name="{{ item.description }}"
+                          data-price="{{ item.suggested_price }}"
+                          data-price-label="{{ item.suggested_price|money(settings.rounding_mode) }}"
+                          data-stock="{{ item.available_qty }}"
+                          data-unit="{{ item.unit }}"
+                          {% if not in_stock %}disabled{% endif %}
+                        >
+                          Agregar al carrito
+                        </button>
+                        {% if item.video_url %}
+                          <button class="button secondary compact-button" type="button" data-video-toggle="shared-video-{{ item.id }}">Ver video</button>
+                        {% endif %}
+                      </div>
+
+                      {% if item.video_embed_url %}
+                        <div class="catalog-video-player hidden" id="shared-video-{{ item.id }}">
+                          <iframe
+                            data-src="{{ item.video_embed_url }}"
+                            title="Video de {{ item.description }}"
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen
+                          ></iframe>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </article>
+                {% endfor %}
+              </div>
+            {% else %}
+              <article class="panel empty-state-panel compact-empty">
+                <h3>Sin items en {{ category["label"]|lower }}</h3>
+                <p class="section-copy">Esta categoria aparecera aqui apenas el administrador publique productos o servicios.</p>
+              </article>
+            {% endif %}
+          </section>
+        {% endfor %}
+      {% else %}
+        <article class="panel empty-state-panel">
+          <h2>No hay productos publicados</h2>
+          <p class="section-copy">Cuando el administrador active productos del catalogo, se mostraran aqui con formato de tienda.</p>
+        </article>
+      {% endif %}
+    </div>
+
+    <aside class="panel catalog-cart" data-cart-panel data-whatsapp="{{ whatsapp_number }}">
+      <p class="eyebrow">Carrito</p>
+      <h2>Tu pedido</h2>
+      <div class="catalog-order-fields" data-order-fields>
+        <label>
+          <span>Nombre</span>
+          <input type="text" data-order-name placeholder="Nombre para registrar el pedido" required>
+        </label>
+        <label>
+          <span>Telefono</span>
+          <input type="text" data-order-phone placeholder="Opcional">
+        </label>
+        <label>
+          <span>Direccion o ubicacion</span>
+          <textarea rows="3" data-order-address placeholder="Direccion de entrega o ubicacion" required></textarea>
+        </label>
+        <p class="catalog-cart-warning hidden" data-order-feedback></p>
+      </div>
+      <div class="catalog-cart-items" data-cart-items>
+        <p class="catalog-cart-empty">Agrega productos para preparar el mensaje de WhatsApp.</p>
+      </div>
+      <div class="catalog-cart-total">
+        <span>Total estimado</span>
+        <strong data-cart-total>0</strong>
+      </div>
+      <button class="button primary catalog-cart-checkout" type="button" data-cart-whatsapp disabled>
+        Comprar por WhatsApp
+      </button>
+      {% if not whatsapp_number %}
+        <p class="catalog-cart-warning">Configura el telefono de la empresa para activar WhatsApp.</p>
+      {% endif %}
+
+      {% if current_user %}
+        <div class="seller-funnel" data-seller-funnel>
+          <p class="eyebrow">Embudo de venta</p>
+          <h3>Convertir carrito</h3>
+          <div class="seller-funnel-steps" aria-label="Embudo comercial">
+            <span class="active">1. Seleccion</span>
+            <span>2. Contacto</span>
+            <span>3. Cotizacion</span>
+            <span>4. Factura</span>
+          </div>
+          <div class="seller-funnel-actions">
+            <a class="button primary compact-button is-disabled" href="/quotes/new" data-cart-seller-quote aria-disabled="true">
+              Generar cotizacion
+            </a>
+            <a class="button secondary compact-button is-disabled" href="/quotes/new?mode=invoice" data-cart-seller-invoice aria-disabled="true">
+              Generar factura
+            </a>
+          </div>
+          <p class="seller-funnel-note">
+            Herramientas internas visibles solo para usuarios con sesion de vendedor o administrador.
+          </p>
+        </div>
+      {% endif %}
+    </aside>
+  </section>
+{% endblock %}

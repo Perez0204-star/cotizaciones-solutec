@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error_title }} | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="auth-shell">
+    <article class="auth-card">
+      <p class="eyebrow">Estado del sistema</p>
+      <h1>{{ error_title }}</h1>
+      <p class="section-copy">{{ error_message }}</p>
+      <div class="form-actions">
+        <a class="button primary" href="{{ error_action_url }}">{{ error_action_label }}</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

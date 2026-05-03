@@ -1,116 +1,207 @@
 {% extends "base.html" %}
 
-{% block title %}{{ quote.quote_number }} | Cotizaciones{% endblock %}
+{% set document_label = quote.document_label or "Cotizacion" %}
+{% set document_number = quote.document_number or quote.quote_number %}
+{% set document_heading = "FACTURA" if is_invoice else "COTIZACION" %}
+
+{% block title %}{{ document_number }} | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
-  <section class="page-heading">
+  {% set status = (quote.status or '')|upper %}
+  <section class="page-heading print-hidden">
     <div>
-      <p class="eyebrow">Cotizacion guardada</p>
-      <h1>{{ quote.quote_number }}</h1>
+      <p class="eyebrow">{{ "Factura generada" if is_invoice else "Cotizacion guardada" }}</p>
+      <h1>{{ document_number }}</h1>
       <p class="section-copy">{{ quote.title }}</p>
+      {% if quote.status %}
+        <span class="badge">{{ quote_status_label(quote.status) }}</span>
+      {% endif %}
     </div>
     <div class="hero-actions">
-      <a class="button primary" href="/quotes/{{ quote.id }}/export">Descargar Excel</a>
-      <a class="button secondary" href="/quotes/{{ quote.id }}/edit">Editar cotizacion</a>
-      <a class="button secondary" href="/quotes/new">Nueva cotizacion</a>
-      <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('¿Eliminar esta cotización? Esta acción no se puede deshacer.');">
-        <input type="hidden" name="next" value="/">
-        <button class="button danger" type="submit">Eliminar cotizacion</button>
-      </form>
+      {% if is_invoice %}
+        <a class="button secondary" href="/quotes/{{ source_quote.id }}">Volver a la cotizacion</a>
+        <a class="button secondary" href="/quotes/{{ source_quote.id }}/invoice/export-pdf">Descargar PDF factura</a>
+        <button class="button secondary" type="button" data-print-document="invoice">Imprimir factura</button>
+      {% else %}
+        <a class="button secondary" href="/quotes">Volver al listado</a>
+        <a class="button primary" href="/quotes/{{ quote.id }}/export-pdf">Descargar PDF</a>
+        <button class="button secondary" type="button" data-print-document="quote">Imprimir cotizacion</button>
+        {% if status in ["PAID", "CREDIT"] %}
+          <a class="button secondary" href="/quotes/{{ quote.id }}/invoice">Ver factura</a>
+        {% else %}
+          <form method="post" action="/quotes/{{ quote.id }}/issue-invoice" class="inline-form">
+            <input type="hidden" name="payment_mode" value="cash">
+            <button class="button primary" type="submit">Facturar contado</button>
+          </form>
+          <form method="post" action="/quotes/{{ quote.id }}/issue-invoice" class="inline-form">
+            <input type="hidden" name="payment_mode" value="credit">
+            <button class="button secondary" type="submit">Facturar credito</button>
+          </form>
+          {% if status == "INVOICED" %}
+            <a class="button secondary" href="/quotes/{{ quote.id }}/invoice">Ver factura</a>
+          {% endif %}
+        {% endif %}
+        <a class="button secondary" href="/quotes/{{ quote.id }}/edit">Editar cotizacion</a>
+        <form method="post" action="/quotes/{{ quote.id }}/delete" class="inline-form" onsubmit="return confirm('Eliminar esta cotizacion? Esta accion no se puede deshacer.');">
+          <input type="hidden" name="next" value="/quotes">
+          <button class="button danger" type="submit">Eliminar cotizacion</button>
+        </form>
+      {% endif %}
     </div>
   </section>
 
-  <section class="panel-grid">
-    <article class="panel">
-      <div class="detail-grid">
-        <div>
-          <span class="detail-label">Cliente</span>
-          <strong>{{ quote.client_name }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Correo</span>
-          <strong>{{ quote.client_email or "Sin correo" }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Ubicacion</span>
-          <strong>{{ quote.location }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Solicitado por</span>
-          <strong>{{ quote.requested_by }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Fecha</span>
-          <strong>{{ quote.quote_date }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Moneda</span>
-          <strong>{{ quote.currency_code }}</strong>
-        </div>
-        <div>
-          <span class="detail-label">Margen global</span>
-          <strong>{{ quote.price_margin_pct|percent }}%</strong>
-        </div>
-      </div>
-    </article>
+  {% if request.query_params.get("error") %}
+    <p class="form-alert error print-hidden">{{ request.query_params.get("error") }}</p>
+  {% endif %}
+  {% if request.query_params.get("success") %}
+    <p class="form-alert success print-hidden">{{ request.query_params.get("success") }}</p>
+  {% endif %}
 
-    <article class="panel">
-      <p class="eyebrow">Resumen financiero</p>
-      <div class="total-row">
-        <span>Total costos directos</span>
-        <strong>{{ quote.subtotal|money(settings.rounding_mode) }}</strong>
+  <section class="panel commercial-sheet commercial-sheet-modern">
+    <div class="commercial-ribbon commercial-ribbon-top"></div>
+    <div class="commercial-ribbon commercial-ribbon-bottom"></div>
+
+    <div class="commercial-header-main">
+      <div class="commercial-brand-stack commercial-brand-stack-full">
+        <div class="commercial-logo-shell commercial-logo-shell-modern">
+          {% if settings.logo_filename %}
+            <img src="{{ media_src(settings.logo_filename) }}" alt="{{ settings.org_name }}" class="commercial-logo">
+          {% endif %}
+        </div>
+
+        <div class="commercial-company-panel commercial-company-panel-centered">
+          <p class="commercial-kicker">Informacion de la empresa</p>
+          <h2>{{ settings.org_name }}</h2>
+          <p class="commercial-company-slogan">{{ settings.brand_slogan }}</p>
+
+          <div class="commercial-company-lines{% if settings.company_nit %} has-nit{% endif %}">
+            {% if settings.company_nit %}
+              <p>
+                <span>NIT</span>
+                <strong>{{ settings.company_nit }}</strong>
+              </p>
+            {% endif %}
+            <p>
+              <span>Direccion</span>
+              <strong>{{ settings.company_address or "Direccion pendiente de configuracion" }}</strong>
+            </p>
+            <p>
+              <span>Telefono</span>
+              <strong>{{ settings.company_phone or "Sin telefono corporativo" }}</strong>
+            </p>
+            <p>
+              <span>Correo</span>
+              <strong>{{ settings.company_email or "Sin correo corporativo" }}</strong>
+            </p>
+          </div>
+        </div>
       </div>
-      <div class="total-row">
-        <span>IVA</span>
-        <strong>{{ quote.tax_amount|money(settings.rounding_mode) }}</strong>
+    </div>
+
+    <div class="commercial-summary-grid">
+      <article class="commercial-summary-card commercial-summary-card-document">
+        <p class="commercial-summary-title">{{ document_heading }}</p>
+        <strong>{{ document_number }}</strong>
+        <div class="commercial-summary-list">
+          <p>
+            <span>Fecha</span>
+            <strong>{{ quote.quote_date|display_date }}</strong>
+          </p>
+        </div>
+      </article>
+
+      <article class="commercial-summary-card commercial-summary-card-client">
+        <p class="commercial-summary-title">Datos del cliente</p>
+        <strong>{{ quote.client_name }}</strong>
+        <div class="commercial-summary-list commercial-summary-list-client">
+          {% if quote.client_document_number or quote.client_document_type %}
+            <p>
+              <span>Documento</span>
+              <strong>{{ (quote.client_document_type or '') ~ (' ' if quote.client_document_type and quote.client_document_number else '') ~ (quote.client_document_number or '') }}</strong>
+            </p>
+          {% endif %}
+          {% if quote.client_email %}
+            <p>
+              <span>Correo</span>
+              <strong>{{ quote.client_email }}</strong>
+            </p>
+          {% endif %}
+          <p>
+            <span>Celular</span>
+            <strong>{{ quote.client_phone or "No registrado" }}</strong>
+          </p>
+          <p class="commercial-summary-wide">
+            <span>Direccion</span>
+            <strong>{{ quote.client_address or "Sin direccion registrada" }}</strong>
+          </p>
+        </div>
+      </article>
+    </div>
+
+    <div class="commercial-section-card commercial-table-card commercial-table-card-modern">
+      <div class="table-wrap commercial-table-wrap">
+        <table class="commercial-table commercial-table-modern">
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Descripcion</th>
+              <th class="align-right">Cant.</th>
+              <th class="align-right">P.Unitario</th>
+              <th class="align-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in quote["items"] %}
+              <tr>
+                <td class="commercial-code-cell">
+                  <strong>{{ item.sku or "-" }}</strong>
+                </td>
+                <td class="commercial-description-cell">
+                  <strong>{{ item.description }}</strong>
+                  <span>{{ item.unit }}{% if not item.taxable %} - Sin IVA{% endif %}</span>
+                </td>
+                <td class="align-right">{{ item.qty }}</td>
+                <td class="align-right">{{ item.price_unit|money(settings.rounding_mode) }}</td>
+                <td class="align-right total-cell">{{ item.line_total|money(settings.rounding_mode) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-      <div class="total-row grand">
-        <span>Total</span>
-        <strong>{{ quote.total|money(settings.rounding_mode) }}</strong>
-      </div>
+    </div>
+
+    <div class="commercial-footer-grid{% if not quote.notes %} no-notes{% endif %}">
       {% if quote.notes %}
-        <div class="quote-notes">
-          <span class="detail-label">Notas</span>
-          <p>{{ quote.notes }}</p>
+        <div class="commercial-section-card commercial-observations-card commercial-observations-card-modern">
+          <div class="commercial-section-heading commercial-section-heading-soft">
+            <span>Observaciones</span>
+          </div>
+          <div class="commercial-observations-body">
+            <p class="commercial-notes">{{ quote.notes }}</p>
+          </div>
         </div>
       {% endif %}
-    </article>
-  </section>
 
-  <section class="panel">
-    <div class="table-wrap">
-      <table>
-        <colgroup>
-          <col>
-          <col>
-          <col>
-          <col class="numeric-col">
-          <col class="numeric-col">
-          <col class="numeric-col">
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Descripcion</th>
-            <th>Unidad</th>
-            <th class="align-right">Cantidad</th>
-            <th class="align-right">Vr Material</th>
-            <th class="align-right">Vr Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in quote["items"] %}
-            <tr>
-              <td>{{ item.sku }}</td>
-              <td>{{ item.description }}</td>
-              <td>{{ item.unit }}</td>
-              <td class="align-right">{{ item.qty }}</td>
-              <td class="align-right">{{ item.price_unit|money(settings.rounding_mode) }}</td>
-              <td class="align-right">{{ item.line_total|money(settings.rounding_mode) }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <aside class="commercial-total-column commercial-total-column-modern">
+        <div class="commercial-total-card commercial-total-card-modern">
+          <div class="commercial-total-row">
+            <span>Subtotal</span>
+            <strong>{{ quote.subtotal|money(settings.rounding_mode) }}</strong>
+          </div>
+          <div class="commercial-total-row">
+            <span>IVA gravado ({{ quote.tax_rate|percent }}%)</span>
+            <strong>{{ quote.tax_amount|money(settings.rounding_mode) }}</strong>
+          </div>
+          <div class="commercial-total-row grand">
+            <span>Total</span>
+            <strong>{{ quote.total|money(settings.rounding_mode) }}</strong>
+          </div>
+        </div>
+      </aside>
     </div>
+
+    {% if quote.closing_message %}
+      <p class="commercial-thanks">{{ quote.closing_message }}</p>
+    {% endif %}
   </section>
 {% endblock %}

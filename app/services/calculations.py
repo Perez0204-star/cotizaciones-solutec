@@ -152,12 +152,30 @@ def quote_totals(
     line_totals: list[object],
     tax_rate: object,
     rounding_mode: str = "integer",
+    taxable_flags: list[object] | None = None,
 ) -> dict[str, Decimal]:
-    subtotal = round_money(sum((to_decimal(value) for value in line_totals), Decimal("0")), rounding_mode)
-    tax_amount = round_money(subtotal * normalize_percent(tax_rate), rounding_mode)
+    values = [to_decimal(value) for value in line_totals]
+    subtotal = round_money(sum(values, Decimal("0")), rounding_mode)
+    if taxable_flags is None:
+        taxable_subtotal = subtotal
+    else:
+        flags = list(taxable_flags)
+        taxable_subtotal = round_money(
+            sum(
+                (
+                    value
+                    for index, value in enumerate(values)
+                    if index >= len(flags) or str(flags[index]).strip() not in {"0", "false", "False", ""}
+                ),
+                Decimal("0"),
+            ),
+            rounding_mode,
+        )
+    tax_amount = round_money(taxable_subtotal * normalize_percent(tax_rate), rounding_mode)
     total = round_money(subtotal + tax_amount, rounding_mode)
     return {
         "subtotal": subtotal,
+        "taxable_subtotal": taxable_subtotal,
         "tax_amount": tax_amount,
         "total": total,
     }

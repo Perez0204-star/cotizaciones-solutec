@@ -47,6 +47,18 @@ class CalculationTests(unittest.TestCase):
         self.assertEqual(float(totals["tax_amount"]), 49640.0)
         self.assertEqual(float(totals["total"]), 310901.0)
 
+    def test_quote_totals_only_tax_taxable_lines(self) -> None:
+        totals = quote_totals(
+            line_totals=[1000, 2000],
+            taxable_flags=[1, 0],
+            tax_rate=19,
+            rounding_mode="integer",
+        )
+        self.assertEqual(float(totals["subtotal"]), 3000.0)
+        self.assertEqual(float(totals["taxable_subtotal"]), 1000.0)
+        self.assertEqual(float(totals["tax_amount"]), 190.0)
+        self.assertEqual(float(totals["total"]), 3190.0)
+
     def test_margin_keeps_normal_price_at_hundred_percent(self) -> None:
         self.assertEqual(float(adjusted_price_by_margin(3000, 100, "integer")), 3000.0)
 

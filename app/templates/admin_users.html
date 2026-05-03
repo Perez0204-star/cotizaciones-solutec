@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Administracion</p>
+      <h1>Usuarios y accesos</h1>
+      <p class="section-copy">Crea usuarios, edita nombre, correo y rol, y administra la recuperacion segura desde un solo panel.</p>
+    </div>
+    <div class="heading-actions">
+      <a class="button secondary" href="/settings">Configuracion</a>
+      <a class="button primary" href="/platforms/new">Crear plataforma interna</a>
+    </div>
+  </section>
+
+  <section class="panel-grid panel-grid-admin">
+    <article class="panel">
+      <p class="eyebrow">Crear usuario</p>
+      <h2>Nuevo acceso</h2>
+
+      {% if error %}
+        <p class="form-alert error">{{ error }}</p>
+      {% endif %}
+      {% if success %}
+        <p class="form-alert success">{{ success }}</p>
+      {% endif %}
+
+      <form method="post" action="/admin/users" class="app-form">
+        <div class="form-grid">
+          <label class="span-2">
+            <span>Nombre completo</span>
+            <input type="text" name="full_name" value="{{ form_data.full_name or '' }}" autocomplete="name" required>
+          </label>
+
+          <label>
+            <span>Correo electronico</span>
+            <input type="email" name="email" value="{{ form_data.email or '' }}" autocomplete="email" required>
+          </label>
+
+          <label>
+            <span>Usuario</span>
+            <input type="text" name="username" value="{{ form_data.username or '' }}" autocomplete="username" required>
+          </label>
+
+          <label>
+            <span>Contrasena</span>
+            <input type="password" name="password" autocomplete="new-password" required>
+          </label>
+
+          <label>
+            <span>Confirmar contrasena</span>
+            <input type="password" name="confirm_password" autocomplete="new-password" required>
+          </label>
+
+          <label class="toggle span-2">
+            <input type="checkbox" name="is_admin" value="1" {% if form_data.is_admin %}checked{% endif %}>
+            <span>Conceder permisos de administrador</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="button primary" type="submit">Crear usuario</button>
+        </div>
+      </form>
+    </article>
+
+    <aside class="panel tech-aside">
+      <p class="eyebrow">Seguridad</p>
+      <h2>Estado de accesos</h2>
+      <div class="stack-list compact-stack">
+        <div class="stack-row">
+          <p>Inicio con Google</p>
+          <strong>{{ "Activo" if google_ready else "Pendiente" }}</strong>
+        </div>
+        <div class="stack-row">
+          <p>Recuperacion por correo</p>
+          <strong>{{ "Activa" if smtp_ready else "Pendiente" }}</strong>
+        </div>
+      </div>
+
+      <p class="eyebrow">Codigo maestro</p>
+      <div class="code-card">{{ recovery_code }}</div>
+      <p class="micro-copy">La recuperacion por correo solo aplica a cuentas administradoras con correo registrado.</p>
+    </aside>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Usuarios activos</h2>
+      <span class="badge muted">{{ users|length }} registrados</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Perfil</th>
+            <th>Editar datos</th>
+            <th>Restablecer contrasena</th>
+            <th>Eliminar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td class="user-summary-cell">
+                <strong>{{ user.full_name or user.username }}</strong>
+                <div class="user-summary-meta">
+                  <span>{{ user.username }}</span>
+                  <span>{{ user.email or "Sin correo" }}</span>
+                </div>
+                <div class="user-summary-badges">
+                  <span class="badge {% if user.is_admin %}good{% else %}muted{% endif %}">
+                    {{ "Administrador" if user.is_admin else "Operativo" }}
+                  </span>
+                  {% if user.google_subject %}
+                    <span class="badge muted">Google vinculado</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <form method="post" action="/admin/users/{{ user.id }}/update" class="user-edit-form">
+                  <input type="text" name="full_name" value="{{ user.full_name or '' }}" placeholder="Nombre completo" required>
+                  <input type="email" name="email" value="{{ user.email or '' }}" placeholder="Correo electronico" required>
+                  <input type="text" name="username" value="{{ user.username }}" placeholder="Usuario" required>
+                  <label class="toggle inline-toggle">
+                    <input type="checkbox" name="is_admin" value="1" {% if user.is_admin %}checked{% endif %}>
+                    <span>Administrador</span>
+                  </label>
+                  <button class="button secondary compact-button" type="submit">Guardar</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="inline-password-form">
+                  <input type="password" name="password" placeholder="Nueva contrasena" required>
+                  <input type="password" name="confirm_password" placeholder="Confirmar" required>
+                  <button class="button secondary compact-button" type="submit">Restablecer</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="/admin/users/{{ user.id }}/delete" class="inline-form" onsubmit="return confirm('Eliminar este usuario? Esta accion no se puede deshacer.');">
+                  <button class="button danger compact-button" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="empty-row">No hay usuarios disponibles.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">Plataformas registradas</p>
+        <h2>Empresas disponibles para administracion</h2>
+      </div>
+      <span class="badge muted">{{ platforms|length }} activas</span>
+    </div>
+
+    <div class="platform-admin-list">
+      {% for platform in platforms %}
+        <article class="platform-admin-card">
+          <div class="platform-admin-head">
+            <strong>{{ platform.name }}</strong>
+            <div class="catalog-inline-badges">
+              {% if platform.is_primary %}
+                <span class="badge good">Principal</span>
+              {% endif %}
+              {% if platform.slug == platform_slug %}
+                <span class="badge muted">Actual</span>
+              {% endif %}
+            </div>
+          </div>
+          <p class="platform-admin-slug">{{ platform.slug }}</p>
+          <p class="platform-admin-copy">{{ platform.brand_slogan or "Sin lema configurado." }}</p>
+          <small>Creada: {{ platform.created_at|display_date }}</small>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

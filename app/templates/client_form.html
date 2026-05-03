@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ "Editar" if client_id else "Nuevo" }} cliente | Cotizaciones{% endblock %}
+{% block title %}{{ "Editar" if client_id else "Nuevo" }} cliente | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
       <p class="eyebrow">Ficha de cliente</p>
       <h1>{{ "Editar cliente" if client_id else "Nuevo cliente" }}</h1>
-      <p class="section-copy">Datos simples para reutilizar en las cotizaciones y tener un historial limpio.</p>
+      <p class="section-copy">Guarda solo los datos esenciales para reutilizarlos rapido en cotizaciones y facturas.</p>
     </div>
     <a class="button secondary" href="/clients">Volver</a>
   </section>
@@ -23,25 +23,62 @@
       {% endif %}
 
       <div class="form-grid">
+        <label>
+          <span>Tipo de cliente</span>
+          <select name="client_type">
+            <option value="CONSUMER" {% if (form_data.client_type or 'CONSUMER') == 'CONSUMER' %}selected{% endif %}>Cliente particular / consumidor final</option>
+            <option value="PERSONAL" {% if form_data.client_type == 'PERSONAL' %}selected{% endif %}>Persona natural</option>
+            <option value="BUSINESS" {% if form_data.client_type == 'BUSINESS' %}selected{% endif %}>Persona juridica / empresa</option>
+          </select>
+        </label>
+
         <label class="span-2">
-          <span>Nombre</span>
+          <span>Nombre del cliente</span>
           <input type="text" name="name" value="{{ form_data.name or '' }}" required>
         </label>
 
         <label>
-          <span>Email</span>
-          <input type="email" name="email" value="{{ form_data.email or '' }}">
-        </label>
-
-        <label>
-          <span>Teléfono</span>
-          <input type="text" name="phone" value="{{ form_data.phone or '' }}">
+          <span>Telefono</span>
+          <input type="text" name="phone" value="{{ form_data.phone or '' }}" required>
         </label>
 
         <label class="span-2">
-          <span>Dirección</span>
-          <textarea name="address" rows="4">{{ form_data.address or '' }}</textarea>
+          <span>Direccion o ubicacion</span>
+          <textarea name="address" rows="4" required>{{ form_data.address or '' }}</textarea>
         </label>
+
+        <div class="span-2 quote-client-optional-panel quote-client-optional-panel-static">
+          <div class="quote-client-optional-head">
+            <div>
+              <strong>Datos opcionales</strong>
+              <p>Documento y correo solo se muestran cuando los completas.</p>
+            </div>
+          </div>
+
+          <div class="quote-client-optional-grid">
+            <label>
+              <span>Tipo de documento</span>
+              <select name="document_type">
+                <option value="" {% if not form_data.document_type %}selected{% endif %}>No agregar</option>
+                <option value="NIT" {% if form_data.document_type == 'NIT' %}selected{% endif %}>NIT</option>
+                <option value="CC" {% if form_data.document_type == 'CC' %}selected{% endif %}>Cedula</option>
+                <option value="CE" {% if form_data.document_type == 'CE' %}selected{% endif %}>Cedula de extranjeria</option>
+                <option value="RUT" {% if form_data.document_type == 'RUT' %}selected{% endif %}>RUT</option>
+                <option value="OTRO" {% if form_data.document_type == 'OTRO' %}selected{% endif %}>Otro</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Numero de documento</span>
+              <input type="text" name="document_number" value="{{ form_data.document_number or '' }}" placeholder="Opcional">
+            </label>
+
+            <label class="span-2">
+              <span>Correo electronico</span>
+              <input type="email" name="email" value="{{ form_data.email or '' }}" placeholder="Opcional">
+            </label>
+          </div>
+        </div>
       </div>
 
       <div class="form-actions">

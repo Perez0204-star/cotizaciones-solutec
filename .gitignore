@@ -16,5 +16,6 @@ data/uploads/
 data/templates/
 data/cotizaciones.db
 data/session_secret.txt
+data/recovery_code.txt
 
 *.log

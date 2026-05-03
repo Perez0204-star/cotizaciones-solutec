@@ -1,33 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Ingresar | Cotizaciones{% endblock %}
+{% block title %}Ingresar | {{ public_branding.org_name }}{% endblock %}
 
 {% block content %}
   <section class="auth-shell">
-    <article class="auth-card">
-      <p class="eyebrow">Acceso seguro</p>
-      <h1>{{ auth_title }}</h1>
-      <p class="section-copy">{{ auth_intro }}</p>
+    <article class="auth-card auth-card-tech">
+      <div class="auth-stage">
+        <p class="eyebrow">Acceso seguro</p>
+        <h1>{{ auth_title }}</h1>
+        <p class="section-copy">{{ auth_intro }}</p>
 
-      {% if error %}
-        <p class="form-alert error">{{ error }}</p>
-      {% endif %}
+        <div class="tech-visual">
+          <div class="tech-ring tech-ring-a"></div>
+          <div class="tech-ring tech-ring-b"></div>
+          <div class="tech-grid-panel">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="landing-brand-card">
+            <div class="landing-brand-lines landing-brand-lines-top"></div>
+            <div class="landing-brand-lines landing-brand-lines-bottom"></div>
+            <div class="landing-brand-glow"></div>
+            <div class="landing-brand-mark landing-brand-mark-cap">
+              <span class="landing-brand-initials landing-brand-cap">CAP</span>
+            </div>
+            <div class="landing-brand-copy landing-brand-copy-cap">
+              <span class="tech-brand-label">Identidad principal</span>
+              <strong class="landing-brand-name-stack">
+                <span>CARLOS</span>
+                <span>ANDRES</span>
+                <span>PEREZ LOAIZA</span>
+              </strong>
+              <p class="landing-brand-slogan landing-brand-role">TECNICO INFORMATICO</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <form method="post" action="/login" class="app-form auth-form">
-        <input type="hidden" name="next" value="{{ next_path }}">
+      <div class="auth-form-panel">
+        <div class="auth-form-header">
+          <p class="eyebrow">Ingreso</p>
+          <h2>Entrar ahora</h2>
+        </div>
 
-        <label>
-          <span>Usuario</span>
-          <input type="text" name="username" value="{{ username or '' }}" autocomplete="username" required>
-        </label>
+        {% if error %}
+          <p class="form-alert error">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+          <p class="form-alert success">{{ success }}</p>
+        {% endif %}
 
-        <label>
-          <span>Contrasena</span>
-          <input type="password" name="password" autocomplete="current-password" required>
-        </label>
+        <form method="post" action="/login{{ platform_query }}" class="app-form auth-form">
+          <input type="hidden" name="next" value="{{ next_path }}">
 
-        <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
-      </form>
+          <label>
+            <span>Usuario o correo</span>
+            <input type="text" name="identity" value="{{ identity or '' }}" autocomplete="username" required>
+          </label>
+
+          <label>
+            <span>Contrasena</span>
+            <input type="password" name="password" autocomplete="current-password" required>
+          </label>
+
+          <button class="button primary auth-submit" type="submit">{{ submit_label }}</button>
+        </form>
+
+        <div class="auth-divider"><span>o continua con</span></div>
+
+        {% if google_enabled %}
+          <a class="button secondary google-button" href="{{ google_start_url }}">
+            <span class="google-badge">G</span>
+            <span>Ingresar con Google</span>
+          </a>
+        {% else %}
+          <button class="button secondary google-button disabled" type="button" disabled>
+            <span class="google-badge">G</span>
+            <span>Ingresar con Google</span>
+          </button>
+          <p class="micro-copy">Activa Google OAuth desde Configuracion para habilitar este acceso.</p>
+        {% endif %}
+
+        {% if show_recovery_link %}
+          <div class="auth-links auth-links-end">
+            <a href="/password-recovery{{ platform_query }}">Recuperar contrasena</a>
+          </div>
+        {% endif %}
+      </div>
     </article>
   </section>
 {% endblock %}

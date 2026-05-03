@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Cartera de creditos | {{ settings.org_name }}{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Cartera comercial</p>
+      <h1>{% if selected_client %}Cartera de {{ selected_client.name }}{% else %}Creditos de clientes{% endif %}</h1>
+      <p class="section-copy">
+        {% if selected_client %}
+          Aqui ves solo las facturas a credito con saldo pendiente de este cliente.
+        {% else %}
+          La cartera se alimenta con facturas generadas a credito y solo muestra saldos pendientes por cobrar.
+        {% endif %}
+      </p>
+    </div>
+    <div class="row-actions">
+      {% if selected_client %}
+        <a class="button secondary compact-button" href="/clients">Volver a clientes</a>
+        <a class="button secondary compact-button" href="/credits">Ver toda la cartera</a>
+      {% endif %}
+      <a class="button primary" href="/credits/new{% if selected_client %}?client_id={{ selected_client.id }}{% endif %}">Nuevo credito manual</a>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span>Total otorgado</span>
+      <strong>{{ totals.amount|money(settings.rounding_mode) }}</strong>
+      <p>Valor acumulado en creditos registrados.</p>
+    </article>
+    <article class="stat-card">
+      <span>Abonado</span>
+      <strong>{{ totals.paid|money(settings.rounding_mode) }}</strong>
+      <p>Pagos o abonos aplicados a la cartera.</p>
+    </article>
+    <article class="stat-card">
+      <span>Saldo cartera</span>
+      <strong>{{ totals.balance|money(settings.rounding_mode) }}</strong>
+      <p>Valor pendiente por recuperar.</p>
+    </article>
+  </section>
+
+  <section class="panel">
+    {% if success_message %}
+      <p class="form-alert success">{{ success_message }}</p>
+    {% endif %}
+    {% if error_message %}
+      <p class="form-alert error">{{ error_message }}</p>
+    {% endif %}
+
+    <form method="get" action="/credits" class="search-form">
+      {% if selected_client %}
+        <input type="hidden" name="client_id" value="{{ selected_client.id }}">
+      {% endif %}
+      <input type="search" name="q" value="{{ search_term or '' }}" placeholder="Buscar por cliente, factura, telefono, estado o descripcion">
+      <button class="button secondary compact-button" type="submit">Buscar</button>
+      {% if search_term or selected_client %}
+        <a class="button secondary compact-button" href="{% if selected_client %}/credits?client_id={{ selected_client.id }}{% else %}/credits{% endif %}">Limpiar</a>
+      {% endif %}
+    </form>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Factura</th>
+            <th>Descripcion</th>
+            <th>Vence</th>
+            <th>Credito</th>
+            <th>Abono</th>
+            <th>Saldo</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for credit in credits %}
+            <tr>
+              <td>
+                <strong>{{ credit.client_name }}</strong>
+                <span class="table-subtext">{{ credit.client_phone or "Sin telefono" }}</span>
+              </td>
+              <td>
+                {% if credit.quote_id and credit.invoice_number %}
+                  <a href="/quotes/{{ credit.quote_id }}/invoice">{{ credit.invoice_number }}</a>
+                  <span class="table-subtext">{{ credit.quote_date or "Sin fecha" }}</span>
+                {% elif credit.quote_id and credit.quote_number %}
+                  <a href="/quotes/{{ credit.quote_id }}/invoice">{{ credit.quote_number }}</a>
+                {% elif credit.order_id %}
+                  <span class="table-subtext">{{ credit.order_number }}</span>
+                {% else %}
+                  <span class="table-subtext">Manual</span>
+                {% endif %}
+              </td>
+              <td>{{ credit.description }}</td>
+              <td>{{ credit.due_date or "Sin fecha" }}</td>
+              <td>{{ credit.amount|money(settings.rounding_mode) }}</td>
+              <td>{{ credit.paid_amount|money(settings.rounding_mode) }}</td>
+              <td><strong>{{ credit.balance|money(settings.rounding_mode) }}</strong></td>
+              <td><span class="badge">{{ credit_status_label(credit.status) }}</span></td>
+              <td>
+                <div class="credit-collection-box">
+                  {% if credit.balance > 0 %}
+                    <form method="post" action="/credits/{{ credit.id }}/collect" class="credit-collection-form">
+                      <input
+                        type="number"
+                        name="payment_amount"
+                        min="0.01"
+                        max="{{ credit.balance }}"
+                        step="0.01"
+                        value="{{ credit.balance }}"
+                        aria-label="Valor a abonar">
+                      <button class="button primary compact-button" type="submit" name="action" value="partial">Abonar</button>
+                      <button class="button secondary compact-button" type="submit" name="action" value="full">Pagar total</button>
+                    </form>
+                  {% else %}
+                    <span class="badge good">Factura pagada</span>
+                  {% endif %}
+
+                  {% if credit.quote_id %}
+                    <div class="row-actions">
+                      <a class="button secondary compact-button" href="/quotes/{{ credit.quote_id }}/invoice">Ver factura</a>
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="row-actions">
+                  <a class="button secondary compact-button" href="/credits/{{ credit.id }}/edit">Editar</a>
+                  <form method="post" action="/credits/{{ credit.id }}/delete" class="inline-form" onsubmit="return confirm('Eliminar este credito de cartera?');">
+                    <button class="button danger compact-button" type="submit">Eliminar</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="9" class="empty-row">
+                {% if selected_client %}
+                  Este cliente no tiene facturas pendientes en cartera.
+                {% else %}
+                  No hay facturas pendientes en cartera.
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

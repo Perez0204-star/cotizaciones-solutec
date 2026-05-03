@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ "Editar" if item_id else "Nuevo" }} item | Cotizaciones{% endblock %}
+{% block title %}{{ "Editar" if item_id else "Nuevo" }} item | {{ settings.org_name }}{% endblock %}
 
 {% block content %}
   <section class="page-heading">
@@ -17,7 +17,7 @@
       <p class="form-alert error">{{ error }}</p>
     {% endif %}
 
-    <form method="post" action="/catalog/save" class="app-form" data-page-form="catalog" data-rounding-mode="{{ settings.rounding_mode }}">
+    <form method="post" action="/catalog/save" enctype="multipart/form-data" class="app-form" data-page-form="catalog" data-rounding-mode="{{ settings.rounding_mode }}">
       {% if item_id %}
         <input type="hidden" name="id" value="{{ item_id }}">
       {% endif %}
@@ -31,6 +31,32 @@
           </select>
         </label>
 
+        <div class="catalog-category-picker span-2">
+          <span>Categoria del producto</span>
+          <div class="catalog-category-options">
+            {% for option in category_options %}
+              <label class="catalog-category-option">
+                <input
+                  type="radio"
+                  name="category"
+                  value="{{ option.code }}"
+                  {% if (form_data.category or 'TECHNOLOGY') == option.code %}checked{% endif %}
+                >
+                <strong>{{ option.label }}</strong>
+                <small>
+                  {% if option.code == "TECHNOLOGY" %}
+                    Equipos, accesorios, software y soluciones digitales.
+                  {% elif option.code == "FOOD" %}
+                    Productos comestibles, insumos y alimentos preparados.
+                  {% else %}
+                    Vestuario, moda, prendas y calzado.
+                  {% endif %}
+                </small>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
         <label>
           <span>SKU</span>
           <input type="text" name="sku" value="{{ form_data.sku or '' }}" required>
@@ -41,9 +67,56 @@
           <input type="text" name="description" value="{{ form_data.description or '' }}" required>
         </label>
 
+        <label class="span-2">
+          <span>Galeria de imagenes</span>
+          <input type="file" name="images" accept=".png,.jpg,.jpeg" multiple>
+          {% if form_data.images %}
+            <div class="catalog-form-gallery">
+              {% for image in form_data.images %}
+                <label class="catalog-form-thumb">
+                  <img src="{{ image.url }}" alt="Imagen {{ loop.index }} de {{ form_data.description or 'producto' }}">
+                  {% if image.id %}
+                    <input type="checkbox" name="remove_gallery_image" value="{{ image.id }}">
+                    <span>Quitar</span>
+                  {% endif %}
+                </label>
+              {% endfor %}
+            </div>
+          {% elif form_data.image_url %}
+            <div class="catalog-media-field">
+              <img src="{{ form_data.image_url }}" alt="Imagen actual del producto" class="catalog-form-image-preview">
+              <label class="toggle inline-toggle">
+                <input type="checkbox" name="remove_image" value="1">
+                <span>Quitar imagen actual</span>
+              </label>
+            </div>
+          {% endif %}
+        </label>
+
+        <label class="span-2">
+          <span>Enlace de video explicativo</span>
+          <input type="url" name="video_url" value="{{ form_data.video_url or '' }}" placeholder="https://www.youtube.com/watch?v=...">
+          {% if form_data.video_embed_url %}
+            <div class="catalog-form-video">
+              <iframe
+                src="{{ form_data.video_embed_url }}"
+                title="Vista previa del video"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+              ></iframe>
+            </div>
+          {% endif %}
+        </label>
+
         <label>
           <span>Unidad</span>
           <input type="text" name="unit" value="{{ form_data.unit or '' }}" placeholder="Unidad, Metro, Hora" required>
+        </label>
+
+        <label>
+          <span>Cantidad disponible</span>
+          <input type="number" name="available_qty" step="0.01" min="0" value="{{ form_data.available_qty or 0 }}">
         </label>
 
         <label>
@@ -51,9 +124,15 @@
           <input id="catalog-cost" type="number" name="cost_amount" step="0.01" min="0" value="{{ form_data.cost_amount or 0 }}">
         </label>
 
+        {% set taxable_value = form_data.get('taxable', 0 if form_data.tax_rate == 0 else 1) %}
+        <input type="hidden" name="tax_rate" value="{{ form_data.tax_rate or settings.iva_rate }}">
+
         <label>
-          <span>Impuesto default</span>
-          <input type="number" name="tax_rate" step="0.01" min="0" value="{{ form_data.tax_rate or settings.iva_rate }}">
+          <span>IVA del item</span>
+          <label class="toggle">
+            <input type="checkbox" name="taxable" value="1" {% if taxable_value in (1, '1', True, 'on') %}checked{% endif %}>
+            <span>Aplicar IVA en cotizaciones</span>
+          </label>
         </label>
 
         <label>
@@ -100,8 +179,8 @@
         </label>
 
         <label class="span-2">
-          <span>Notas para cotización</span>
-          <textarea name="notes_quote" rows="4">{{ form_data.notes_quote or '' }}</textarea>
+          <span>Descripcion publica del producto</span>
+          <textarea name="notes_quote" rows="5" placeholder="Describe caracteristicas, beneficios, garantia o condiciones visibles en el catalogo compartido.">{{ form_data.notes_quote or '' }}</textarea>
         </label>
       </div>
 

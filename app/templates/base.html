@@ -3,43 +3,87 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Cotizaciones Web{% endblock %}</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <title>{% block title %}{{ settings.org_name }} | Panel comercial{% endblock %}</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260501-4">
   </head>
   <body data-page="{{ page_id or '' }}">
+    <div class="page-background">
+      <div class="page-orb orb-a"></div>
+      <div class="page-orb orb-b"></div>
+      <div class="page-grid"></div>
+    </div>
+
     <div class="page-shell">
       <header class="topbar">
-        <div class="brand-block">
-          <p class="eyebrow">Cotizaciones y Excel</p>
-          <a href="/" class="brand-link">Panel Comercial</a>
-        </div>
-
         {% if current_user %}
-          <nav class="topnav">
-            <a href="/" class="{% if page_id == 'dashboard' %}active{% endif %}">Dashboard</a>
-            <a href="/catalog" class="{% if page_id == 'catalog' %}active{% endif %}">Catalogo</a>
-            <a href="/clients" class="{% if page_id == 'clients' %}active{% endif %}">Clientes</a>
-            <a href="/quotes/new" class="{% if page_id == 'quotes' %}active{% endif %}">Nueva cotizacion</a>
-            <a href="/settings" class="{% if page_id == 'settings' %}active{% endif %}">Configuracion</a>
-          </nav>
-          <div class="topbar-side">
-            <div class="org-pill">
-              <span>{{ settings.org_name }}</span>
-              <small>{{ settings.currency_code }} · IVA {{ settings.iva_rate|percent }}%</small>
+          <div class="topbar-main">
+            <div class="brand-lockup">
+              {% if settings.logo_filename %}
+                <img class="brand-logo" src="{{ media_src(settings.logo_filename) }}" alt="{{ settings.org_name }}">
+              {% endif %}
+              <div class="brand-block">
+                <p class="eyebrow">Panel administrativo</p>
+                <a href="/" class="brand-link">{{ settings.org_name }}</a>
+                <p class="brand-tagline">{{ settings.brand_slogan }}</p>
+              </div>
             </div>
-            <div class="user-chip">
-              <strong>{{ current_user.username }}</strong>
-              <small>Acceso protegido</small>
+
+            <div class="topbar-context">
+              <div class="org-pill">
+                <span>{{ settings.org_name }}</span>
+                <small>
+                  {{ settings.currency_code }} - IVA {{ settings.iva_rate|percent }}%
+                  {% if platform_slug != 'principal' %} · Plataforma adicional{% endif %}
+                </small>
+              </div>
+              <div class="user-chip">
+                <strong>{{ current_user.full_name or current_user.username }}</strong>
+                <small>{{ current_user.email or current_user.username }}</small>
+              </div>
+              <form method="post" action="/logout" class="inline-form">
+                <button class="button secondary compact-button" type="submit">Salir</button>
+              </form>
             </div>
-            <form method="post" action="/logout" class="inline-form">
-              <button class="button secondary compact-button" type="submit">Salir</button>
-            </form>
+          </div>
+
+          <div class="topbar-nav-row">
+            <nav class="topnav">
+              <a href="/" class="{% if page_id == 'dashboard' %}active{% endif %}">Dashboard</a>
+              <a href="/orders" class="{% if page_id == 'orders' %}active{% endif %}">Pedidos</a>
+              <a href="/invoices" class="{% if page_id == 'invoices' %}active{% endif %}">Facturas</a>
+              <a href="/quotes" class="{% if page_id == 'quotes' %}active{% endif %}">Cotizaciones</a>
+              <a href="/catalog" class="{% if page_id == 'catalog' %}active{% endif %}">Catalogo</a>
+              <a href="/clients" class="{% if page_id == 'clients' %}active{% endif %}">Clientes</a>
+              <a href="/credits" class="{% if page_id == 'credits' %}active{% endif %}">Cartera</a>
+              {% if current_user.is_admin %}
+                <a href="/admin/users" class="{% if page_id == 'admin' %}active{% endif %}">Usuarios</a>
+                <a href="/settings" class="{% if page_id == 'settings' %}active{% endif %}">Configuracion</a>
+              {% endif %}
+            </nav>
+
+            <div class="topbar-actions">
+              <a class="button primary compact-button" href="/quotes/new">Nueva cotizacion</a>
+            </div>
           </div>
         {% else %}
-          <div class="topbar-side topbar-side-auth">
-            <div class="org-pill">
-              <span>{{ settings.org_name }}</span>
-              <small>Acceso protegido</small>
+          <div class="topbar-main topbar-main-auth">
+            <div class="brand-lockup">
+              {% if public_branding.logo_filename %}
+                <img class="brand-logo" src="{{ media_src(public_branding.logo_filename) }}" alt="{{ public_branding.org_name }}">
+              {% endif %}
+              <div class="brand-block">
+                <p class="eyebrow">Panel administrativo</p>
+                <a href="/" class="brand-link">{{ public_branding.org_name }}</a>
+                <p class="brand-tagline">{{ public_branding.brand_slogan }}</p>
+              </div>
+            </div>
+
+            <div class="topbar-context topbar-context-auth">
+              <div class="org-pill">
+                <span>{{ public_branding.org_name }}</span>
+                <small>{% if platform_slug == 'principal' %}Acceso protegido{% else %}Plataforma independiente{% endif %}</small>
+              </div>
+              <a class="button secondary compact-button" href="/login{{ platform_query }}">Ingresar</a>
             </div>
           </div>
         {% endif %}
@@ -50,7 +94,7 @@
       </main>
     </div>
 
-    <script src="/static/app.js" defer></script>
+    <script src="/static/app.js?v=20260425-4" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>
